@@ -38,7 +38,7 @@ export function Field({ label, name, type = "text", required = false, placeholde
   );
 }
 
-export function TextArea({ label, name, placeholder = "" }) {
+export function TextArea({ label, name, placeholder = "", defaultValue = "" }) {
   return (
     <label className="block">
       <span className="text-sm font-medium text-neutral-700">{label}</span>
@@ -46,6 +46,7 @@ export function TextArea({ label, name, placeholder = "" }) {
         className="mt-2 min-h-24 w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-emerald-600"
         name={name}
         placeholder={placeholder}
+        defaultValue={defaultValue}
       />
     </label>
   );
@@ -58,3 +59,4 @@ export function SubmitButton({ children }) {
     </button>
   );
 }
+

@@ -1,6 +1,7 @@
 ﻿"use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireClinic } from "@/lib/auth/session";
 
@@ -153,29 +154,139 @@ export async function deleteProcedimentoAction(formData) {
   revalidatePath("/dashboard/procedimentos");
 }
 
-export async function createAgendamentoAction(formData) {
-  const { supabase, clinicaId } = await getScopedSupabase();
-  const inicio = requireValue(text(formData, "inicio"), "Informe o inicio do agendamento.");
-  const fim = requireValue(text(formData, "fim"), "Informe o fim do agendamento.");
+function agendaRedirectUrl(formData, fallbackDate = "") {
+  const date = text(formData, "agenda_date") || fallbackDate || new Date().toISOString().slice(0, 10);
+  const profissionalId = text(formData, "profissional_filtro");
+  const params = new URLSearchParams({ date });
 
-  const { data: userData } = await supabase.auth.getUser();
+  if (profissionalId) params.set("profissional", profissionalId);
+  return `/dashboard/agenda?${params.toString()}`;
+}
 
-  const { error } = await supabase.from("agendamentos").insert({
+function redirectAgendaError(formData, message, fallbackDate = "") {
+  const url = agendaRedirectUrl(formData, fallbackDate);
+  const separator = url.includes("?") ? "&" : "?";
+  redirect(`${url}${separator}error=${encodeURIComponent(message)}`);
+}
+
+function parseDateTime(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+async function assertHorarioDisponivel({ supabase, clinicaId, profissionalId, inicioISO, fimISO, ignoreId = "", formData }) {
+  if (!profissionalId) return;
+
+  let query = supabase
+    .from("agendamentos")
+    .select("id")
+    .eq("clinica_id", clinicaId)
+    .eq("profissional_id", profissionalId)
+    .not("status", "eq", "cancelado")
+    .lt("inicio", fimISO)
+    .gt("fim", inicioISO)
+    .limit(1);
+
+  if (ignoreId) {
+    query = query.neq("id", ignoreId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  if (data?.length) {
+    redirectAgendaError(formData, "Este profissional já possui atendimento nesse horário.", inicioISO.slice(0, 10));
+  }
+}
+
+function buildAgendaPayload({ formData, clinicaId, userId }) {
+  const inicioRaw = requireValue(text(formData, "inicio"), "Informe o inicio do agendamento.");
+  const fimRaw = requireValue(text(formData, "fim"), "Informe o fim do agendamento.");
+  const inicio = parseDateTime(inicioRaw);
+  const fim = parseDateTime(fimRaw);
+
+  if (!inicio || !fim) {
+    redirectAgendaError(formData, "Informe datas válidas para o agendamento.");
+  }
+
+  if (fim <= inicio) {
+    redirectAgendaError(formData, "O horário final precisa ser maior que o horário inicial.", inicio.toISOString().slice(0, 10));
+  }
+
+  return {
     clinica_id: clinicaId,
     cliente_id: nullableText(formData, "cliente_id"),
     profissional_id: nullableText(formData, "profissional_id"),
     procedimento_id: nullableText(formData, "procedimento_id"),
-    inicio: new Date(inicio).toISOString(),
-    fim: new Date(fim).toISOString(),
-    status: "agendado",
+    inicio: inicio.toISOString(),
+    fim: fim.toISOString(),
     valor: numberValue(formData, "valor", 0),
     observacoes: nullableText(formData, "observacoes"),
-    created_by: userData?.user?.id || null,
+    created_by: userId || null,
+  };
+}
+
+export async function createAgendamentoAction(formData) {
+  const { supabase, clinicaId } = await getScopedSupabase();
+  const { data: userData } = await supabase.auth.getUser();
+  const payload = buildAgendaPayload({ formData, clinicaId, userId: userData?.user?.id });
+
+  await assertHorarioDisponivel({
+    supabase,
+    clinicaId,
+    profissionalId: payload.profissional_id,
+    inicioISO: payload.inicio,
+    fimISO: payload.fim,
+    formData,
+  });
+
+  const { error } = await supabase.from("agendamentos").insert({
+    ...payload,
+    status: "agendado",
   });
 
   if (error) throw error;
   revalidatePath("/dashboard/agenda");
   revalidatePath("/dashboard");
+  redirect(agendaRedirectUrl(formData, payload.inicio.slice(0, 10)));
+}
+
+export async function updateAgendamentoAction(formData) {
+  const { supabase, clinicaId } = await getScopedSupabase();
+  const id = requireValue(text(formData, "id"), "Agendamento nao informado.");
+  const payload = buildAgendaPayload({ formData, clinicaId, userId: null });
+  const status = requireValue(text(formData, "status"), "Status nao informado.");
+
+  await assertHorarioDisponivel({
+    supabase,
+    clinicaId,
+    profissionalId: payload.profissional_id,
+    inicioISO: payload.inicio,
+    fimISO: payload.fim,
+    ignoreId: id,
+    formData,
+  });
+
+  const { error } = await supabase
+    .from("agendamentos")
+    .update({
+      cliente_id: payload.cliente_id,
+      profissional_id: payload.profissional_id,
+      procedimento_id: payload.procedimento_id,
+      inicio: payload.inicio,
+      fim: payload.fim,
+      valor: payload.valor,
+      observacoes: payload.observacoes,
+      status,
+    })
+    .eq("id", id)
+    .eq("clinica_id", clinicaId);
+
+  if (error) throw error;
+  revalidatePath("/dashboard/agenda");
+  revalidatePath("/dashboard");
+  redirect(agendaRedirectUrl(formData, payload.inicio.slice(0, 10)));
 }
 
 export async function updateAgendamentoStatusAction(formData) {
@@ -187,6 +298,7 @@ export async function updateAgendamentoStatusAction(formData) {
   if (error) throw error;
   revalidatePath("/dashboard/agenda");
   revalidatePath("/dashboard");
+  redirect(agendaRedirectUrl(formData));
 }
 
 export async function deleteAgendamentoAction(formData) {
@@ -197,4 +309,5 @@ export async function deleteAgendamentoAction(formData) {
   if (error) throw error;
   revalidatePath("/dashboard/agenda");
   revalidatePath("/dashboard");
+  redirect(agendaRedirectUrl(formData));
 }

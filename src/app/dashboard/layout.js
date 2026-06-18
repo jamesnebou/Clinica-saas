@@ -1,4 +1,5 @@
 ﻿import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CalendarDays, LayoutDashboard, LogOut, Scissors, Sparkles, Stethoscope, UsersRound } from "lucide-react";
 import { requireClinic } from "@/lib/auth/session";
 import { signOutAction } from "@/app/login/actions";
@@ -14,6 +15,10 @@ const navItems = [
 export default async function DashboardLayout({ children }) {
   const { user, activeClinic } = await requireClinic();
 
+  if (!activeClinic) {
+    redirect("/onboarding");
+  }
+
   return (
     <div className="min-h-screen bg-[#f7f7f4] text-neutral-950 lg:grid lg:grid-cols-[260px_1fr]">
       <aside className="border-b border-neutral-200 bg-white px-5 py-4 lg:min-h-screen lg:border-b-0 lg:border-r lg:px-4">
@@ -23,12 +28,8 @@ export default async function DashboardLayout({ children }) {
               <Sparkles size={18} />
               <span className="text-xs font-bold uppercase tracking-[0.2em]">Clinica SaaS</span>
             </div>
-            <p className="mt-2 text-sm font-semibold text-neutral-950">
-              {activeClinic?.nome || "Sem clinica vinculada"}
-            </p>
-            <p className="mt-1 truncate text-xs text-neutral-500" title={user?.email}>
-              {user?.email}
-            </p>
+            <p className="mt-2 text-sm font-semibold text-neutral-950">{activeClinic.nome}</p>
+            <p className="mt-1 truncate text-xs text-neutral-500" title={user?.email}>{user?.email}</p>
           </div>
           <form action={signOutAction} className="lg:hidden">
             <button className="rounded-lg border border-neutral-200 p-2 text-neutral-600" type="submit" title="Sair">
@@ -41,11 +42,7 @@ export default async function DashboardLayout({ children }) {
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-950"
-              >
+              <Link key={item.href} href={item.href} className="inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-950">
                 <Icon size={17} />
                 {item.label}
               </Link>
