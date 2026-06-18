@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -6,17 +6,21 @@ import { createClient } from "@/lib/supabase/server";
 import { requireClinic } from "@/lib/auth/session";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { uploadClientPhoto } from "@/lib/supabase/storage";
+import { assertClinicLimit, assertClinicOperational } from "@/lib/saas/plans";
 
 async function getScopedSupabase() {
   const context = await requireClinic();
-  const clinicaId = context.activeClinic?.id;
+  const activeClinic = context.activeClinic;
+  const clinicaId = activeClinic?.id;
 
   if (!clinicaId) {
     throw new Error("Nenhuma clinica vinculada ao usuario logado.");
   }
 
+  assertClinicOperational(activeClinic);
+
   const supabase = await createClient();
-  return { supabase, clinicaId };
+  return { supabase, clinicaId, activeClinic };
 }
 
 function text(formData, key) {
@@ -39,7 +43,8 @@ function requireValue(value, message) {
 }
 
 export async function createClienteAction(formData) {
-  const { supabase, clinicaId } = await getScopedSupabase();
+  const { supabase, clinicaId, activeClinic } = await getScopedSupabase();
+  await assertClinicLimit({ clinic: activeClinic, resource: "clientes" });
 
   const payload = {
     clinica_id: clinicaId,
@@ -82,7 +87,8 @@ export async function deleteClienteAction(formData) {
 }
 
 export async function createProfissionalAction(formData) {
-  const { supabase, clinicaId } = await getScopedSupabase();
+  const { supabase, clinicaId, activeClinic } = await getScopedSupabase();
+  await assertClinicLimit({ clinic: activeClinic, resource: "profissionais" });
 
   const { error } = await supabase.from("profissionais").insert({
     clinica_id: clinicaId,
@@ -230,7 +236,8 @@ function buildAgendaPayload({ formData, clinicaId, userId }) {
 }
 
 export async function createAgendamentoAction(formData) {
-  const { supabase, clinicaId } = await getScopedSupabase();
+  const { supabase, clinicaId, activeClinic } = await getScopedSupabase();
+  await assertClinicLimit({ clinic: activeClinic, resource: "agendamentos_mes" });
   const { data: userData } = await supabase.auth.getUser();
   const payload = buildAgendaPayload({ formData, clinicaId, userId: userData?.user?.id });
 

@@ -1,8 +1,9 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarDays, CreditCard, LayoutDashboard, LogOut, Scissors, Sparkles, Stethoscope, UsersRound } from "lucide-react";
+import { Building2, CalendarDays, CreditCard, LayoutDashboard, LogOut, Scissors, Sparkles, Stethoscope, UsersRound } from "lucide-react";
 import { requireClinic } from "@/lib/auth/session";
 import { signOutAction } from "@/app/login/actions";
+import { getClinicBillingState } from "@/lib/saas/plans";
 
 const navItems = [
   { href: "/dashboard", label: "Visao geral", icon: LayoutDashboard },
@@ -14,11 +15,16 @@ const navItems = [
 ];
 
 export default async function DashboardLayout({ children }) {
-  const { user, activeClinic } = await requireClinic();
+  const { user, activeClinic, isInternalAdmin } = await requireClinic();
 
   if (!activeClinic) {
     redirect("/onboarding");
   }
+
+  const billingState = getClinicBillingState(activeClinic);
+  const visibleNavItems = isInternalAdmin
+    ? [...navItems, { href: "/dashboard/admin", label: "Admin SaaS", icon: Building2 }]
+    : navItems;
 
   return (
     <div className="min-h-screen bg-[#f7f7f4] text-neutral-950 lg:grid lg:grid-cols-[260px_1fr]">
@@ -40,7 +46,7 @@ export default async function DashboardLayout({ children }) {
         </div>
 
         <nav className="mt-5 flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <Link key={item.href} href={item.href} className="inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-950">
@@ -58,7 +64,14 @@ export default async function DashboardLayout({ children }) {
           </button>
         </form>
       </aside>
-      <section className="min-w-0">{children}</section>
+            <section className="min-w-0">
+        {billingState.level !== "ok" ? (
+          <div className={`border-b px-5 py-3 text-sm sm:px-8 lg:px-10 ${billingState.level === "danger" ? "border-red-200 bg-red-50 text-red-800" : billingState.level === "warning" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-sky-200 bg-sky-50 text-sky-900"}`}>
+            <strong>{billingState.title}.</strong> {billingState.message}
+          </div>
+        ) : null}
+        {children}
+      </section>
     </div>
   );
 }

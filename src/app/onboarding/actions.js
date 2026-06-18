@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -56,8 +56,11 @@ export async function createClinicAction(_prevState, formData) {
       cidade: text(formData, "cidade") || null,
       estado: text(formData, "estado") || null,
       documento: text(formData, "documento") || null,
-      status: "ativa",
+      status: "trial",
       plano: "starter",
+      assinatura_status: "trial",
+      trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      billing_email: email,
     })
     .select("id")
     .single();

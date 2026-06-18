@@ -1,5 +1,6 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isInternalAdminEmail } from "@/lib/saas/plans";
 
 export async function getCurrentUser() {
   const supabase = await createClient();
@@ -44,7 +45,7 @@ export async function getUserClinics() {
   const memberships = data || [];
   const activeClinic = memberships[0]?.clinicas || null;
 
-  return { user, memberships, activeClinic };
+  return { user, memberships, activeClinic, isInternalAdmin: isInternalAdminEmail(user.email) };
 }
 
 export async function requireClinic() {
@@ -52,4 +53,13 @@ export async function requireClinic() {
   const context = await getUserClinics();
 
   return context;
+}
+export async function requireInternalAdmin() {
+  const user = await requireUser();
+
+  if (!isInternalAdminEmail(user.email)) {
+    redirect("/dashboard");
+  }
+
+  return user;
 }
