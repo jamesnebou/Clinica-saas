@@ -1,6 +1,7 @@
-﻿import { supabaseAdmin } from "@/lib/supabase/admin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const CLIENT_PHOTOS_BUCKET = "cliente-fotos";
+const MAX_CLIENT_PHOTO_BYTES = 10 * 1024 * 1024;
 
 function sanitizeFileName(name = "foto") {
   return String(name || "foto")
@@ -19,6 +20,10 @@ export async function uploadClientPhoto({ clinicaId, clienteId, file }) {
 
   if (!file.type?.startsWith("image/")) {
     throw new Error("Envie apenas arquivos de imagem.");
+  }
+
+  if (file.size > MAX_CLIENT_PHOTO_BYTES) {
+    throw new Error("A imagem precisa ter no máximo 10 MB.");
   }
 
   const extension = file.name?.includes(".") ? file.name.split(".").pop() : "jpg";
