@@ -6,7 +6,7 @@ begin;
 
 -- Replace with the clinic id used in the demo account.
 create temporary table demo_context (clinica_id uuid);
-insert into demo_context values ('00000000-0000-0000-0000-000000000000');
+insert into demo_context values ('c02a6c57-1d40-49d4-8791-9c2c91d0bdcc');
 
 insert into public.profissionais (clinica_id, nome, telefone, email, especialidade, comissao_percentual, observacoes)
 select clinica_id, 'Dra. Helena Martins', '11999990001', 'helena@bellaskin.demo', 'Harmonização facial', 18, 'Profissional principal da demonstração.' from demo_context

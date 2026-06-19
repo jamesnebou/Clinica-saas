@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
@@ -6,7 +6,7 @@ import { signInAction } from "./actions";
 
 const initialState = { ok: true, message: "" };
 
-function SubmitButton() {
+function SubmitButton({ label = "Entrar", pendingLabel = "Entrando..." }) {
   const { pending } = useFormStatus();
 
   return (
@@ -15,16 +15,18 @@ function SubmitButton() {
       type="submit"
       disabled={pending}
     >
-      {pending ? "Entrando..." : "Entrar"}
+      {pending ? pendingLabel : label}
     </button>
   );
 }
 
-export default function LoginForm() {
+export default function LoginForm({ mode = "cliente", next = "/dashboard", emailPlaceholder = "voce@clinica.com", submitLabel = "Entrar" }) {
   const [state, formAction] = useActionState(signInAction, initialState);
 
   return (
     <form action={formAction} className="mt-6 space-y-4">
+      <input type="hidden" name="mode" value={mode} />
+      <input type="hidden" name="next" value={next} />
       <label className="block">
         <span className="text-sm font-medium text-neutral-700">E-mail</span>
         <input
@@ -32,7 +34,7 @@ export default function LoginForm() {
           type="email"
           name="email"
           autoComplete="email"
-          placeholder="voce@clinica.com"
+          placeholder={emailPlaceholder}
           required
         />
       </label>
@@ -54,7 +56,7 @@ export default function LoginForm() {
         </p>
       ) : null}
 
-      <SubmitButton />
+      <SubmitButton label={submitLabel} />
     </form>
   );
 }

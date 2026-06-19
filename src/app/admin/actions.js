@@ -29,9 +29,9 @@ function requireValue(value, message) {
 
 export async function updateClinicCommercialAction(formData) {
   await requireInternalAdmin();
-  const id = requireValue(text(formData, "clinica_id"), "Clínica não informada.");
-  const status = requireValue(text(formData, "status"), "Status não informado.");
-  const plano = requireValue(text(formData, "plano"), "Plano não informado.");
+  const id = requireValue(text(formData, "clinica_id"), "Clinica nao informada.");
+  const status = requireValue(text(formData, "status"), "Status nao informado.");
+  const plano = requireValue(text(formData, "plano"), "Plano nao informado.");
   const trialEndsAt = nullableText(formData, "trial_ends_at");
   const proximaCobranca = nullableText(formData, "proxima_cobranca_em");
   const bloqueioMotivo = nullableText(formData, "bloqueio_motivo");
@@ -63,7 +63,7 @@ export async function updateClinicCommercialAction(formData) {
     .eq("id", id);
 
   if (error) throw error;
-  revalidatePath("/dashboard/admin");
+  revalidatePath("/admin");
   revalidatePath("/dashboard");
 }
 
@@ -86,5 +86,5 @@ export async function upsertSystemPlanAction(formData) {
 
   const { error } = await supabaseAdmin.from("planos_sistema").upsert(payload, { onConflict: "slug" });
   if (error) throw error;
-  revalidatePath("/dashboard/admin");
+  revalidatePath("/admin");
 }

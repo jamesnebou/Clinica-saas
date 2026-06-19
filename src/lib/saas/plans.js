@@ -63,6 +63,7 @@ export async function getSystemPlans() {
   const { data, error } = await supabaseAdmin
     .from("planos_sistema")
     .select("slug, nome, descricao, preco_mensal, limite_usuarios, limite_profissionais, limite_clientes, limite_agendamentos_mes, ativo, ordem")
+    .eq("ativo", true)
     .order("ordem", { ascending: true });
 
   if (error) {
@@ -77,7 +78,7 @@ export async function getClinicPlan(clinic) {
   const slug = clinic?.plano || "starter";
   const { data, error } = await supabaseAdmin
     .from("planos_sistema")
-    .select("slug, nome, preco_mensal, limite_usuarios, limite_profissionais, limite_clientes, limite_agendamentos_mes")
+    .select("slug, nome, descricao, preco_mensal, limite_usuarios, limite_profissionais, limite_clientes, limite_agendamentos_mes, ativo, ordem")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -114,7 +115,7 @@ export function getClinicBillingState(clinic) {
   const trialExpired = status === "trial" && trialEndsAt && trialEndsAt < new Date();
 
   if (status === "cancelada" || status === "bloqueada") {
-    return { blocked: true, level: "danger", title: "Clínica bloqueada", message: clinic?.bloqueio_motivo || "A assinatura desta clínica está cancelada ou bloqueada." };
+    return { blocked: true, level: "danger", title: "Clinica bloqueada", message: clinic?.bloqueio_motivo || "A assinatura desta clinica esta cancelada ou bloqueada." };
   }
 
   if (status === "inadimplente") {
@@ -122,14 +123,23 @@ export function getClinicBillingState(clinic) {
   }
 
   if (trialExpired) {
-    return { blocked: true, level: "warning", title: "Trial expirado", message: "O período de teste terminou. Ative um plano para continuar criando novos registros." };
+    return { blocked: true, level: "warning", title: "Trial expirado", message: "O periodo de teste terminou. Ative um plano para continuar criando novos registros." };
   }
 
   if (status === "trial") {
-    return { blocked: false, level: "info", title: "Clínica em trial", message: trialEndsAt ? `Teste válido até ${trialEndsAt.toLocaleDateString("pt-BR")}.` : "Clínica em período de teste." };
+    return { blocked: false, level: "info", title: "Clinica em trial", message: trialEndsAt ? `Teste valido ate ${trialEndsAt.toLocaleDateString("pt-BR")}.` : "Clinica em periodo de teste." };
   }
 
   return { blocked: false, level: "ok", title: "Assinatura ativa", message: "Plano comercial ativo." };
+}
+
+export function getLimitRows({ plan, usage }) {
+  return [
+    { label: "Usuarios", used: usage.usuarios, limit: plan.limite_usuarios },
+    { label: "Profissionais", used: usage.profissionais, limit: plan.limite_profissionais },
+    { label: "Clientes", used: usage.clientes, limit: plan.limite_clientes },
+    { label: "Agendamentos no mes", used: usage.agendamentos_mes, limit: plan.limite_agendamentos_mes },
+  ];
 }
 
 export function assertClinicOperational(clinic) {

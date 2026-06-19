@@ -1,4 +1,4 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarCheck, CheckCircle2, ClipboardList, CreditCard, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
 
@@ -28,7 +28,7 @@ export default function Home() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
           <Link href="/" className="flex items-center gap-2 text-emerald-800"><Sparkles size={19} /><span className="text-sm font-bold uppercase tracking-[0.18em]">Clinica SaaS</span></Link>
           <nav className="hidden items-center gap-6 text-sm font-semibold text-neutral-600 md:flex"><a href="#recursos">Recursos</a><a href="#planos">Planos</a><Link href="/privacidade">LGPD</Link></nav>
-          <Link href="/login" className="inline-flex h-10 items-center gap-2 rounded-lg bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800">Entrar <ArrowRight size={16} /></Link>
+          <Link href="/login-cliente" className="inline-flex h-10 items-center gap-2 rounded-lg bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800">Entrar <ArrowRight size={16} /></Link>
         </div>
       </header>
 
@@ -38,7 +38,7 @@ export default function Home() {
           <h1 className="mt-6 max-w-3xl text-4xl font-semibold tracking-tight text-neutral-950 sm:text-5xl lg:text-6xl">A clínica organizada para vender, atender e acompanhar resultados.</h1>
           <p className="mt-5 max-w-2xl text-base leading-8 text-neutral-650 sm:text-lg">Agenda, clientes, prontuário, fotos de evolução, pacotes e financeiro em um painel pronto para a rotina de clínicas de estética.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/login" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800">Acessar demonstração <ArrowRight size={17} /></Link>
+            <Link href="/login-cliente" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800">Acessar demonstração <ArrowRight size={17} /></Link>
             <a href="#planos" className="inline-flex h-12 items-center justify-center rounded-lg border border-neutral-250 bg-white px-5 text-sm font-semibold text-neutral-850 shadow-sm transition hover:bg-neutral-50">Ver planos</a>
           </div>
           <div className="mt-8 grid gap-2 text-sm text-neutral-700 sm:grid-cols-2">{proof.map((item) => <div key={item} className="flex items-center gap-2"><CheckCircle2 size={17} className="text-emerald-700" />{item}</div>)}</div>
@@ -61,7 +61,7 @@ export default function Home() {
       </section>
 
       <section id="planos" className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-10">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">Planos</p><h2 className="mt-2 text-3xl font-semibold tracking-tight">Comece pequeno e escale a clínica.</h2></div><Link href="/login" className="inline-flex h-11 items-center justify-center rounded-lg bg-neutral-950 px-5 text-sm font-semibold text-white">Entrar no painel</Link></div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">Planos</p><h2 className="mt-2 text-3xl font-semibold tracking-tight">Comece pequeno e escale a clínica.</h2></div><Link href="/login-cliente" className="inline-flex h-11 items-center justify-center rounded-lg bg-neutral-950 px-5 text-sm font-semibold text-white">Entrar no painel</Link></div>
         <div className="mt-8 grid gap-4 lg:grid-cols-3">{plans.map((plan) => <article key={plan.name} className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"><h3 className="text-xl font-semibold">{plan.name}</h3><p className="mt-2 text-sm text-neutral-500">{plan.detail}</p><p className="mt-5 text-3xl font-semibold">{plan.price}<span className="text-sm font-medium text-neutral-500">/mês</span></p><p className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-600">{plan.limits}</p></article>)}</div>
       </section>
 

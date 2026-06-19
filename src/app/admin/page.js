@@ -1,7 +1,9 @@
-import { Building2, CreditCard, ShieldAlert, UsersRound } from "lucide-react";
+import Link from "next/link";
+import { Building2, CreditCard, LogOut, ShieldAlert, Sparkles, UsersRound } from "lucide-react";
 import { requireInternalAdmin } from "@/lib/auth/session";
+import { signOutAction } from "@/app/login/actions";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { Field, PageHeader, SubmitButton, TextArea } from "@/components/app-shell/ui";
+import { Field, SubmitButton, TextArea } from "@/components/app-shell/ui";
 import { getClinicUsage, getSystemPlans } from "@/lib/saas/plans";
 import { updateClinicCommercialAction, upsertSystemPlanAction } from "./actions";
 
@@ -46,7 +48,7 @@ async function loadClinics() {
 }
 
 export default async function AdminSaasPage() {
-  await requireInternalAdmin();
+  const user = await requireInternalAdmin();
   const [clinics, plans] = await Promise.all([loadClinics(), getSystemPlans()]);
   const planMap = new Map(plans.map((plan) => [plan.slug, plan]));
 
@@ -55,20 +57,39 @@ export default async function AdminSaasPage() {
   const receitaPotencial = clinics.reduce((acc, clinic) => acc + Number(planMap.get(clinic.plano)?.preco_mensal || 0), 0);
 
   const cards = [
-    { label: "Clínicas", value: clinics.length, icon: Building2 },
+    { label: "Clinicas", value: clinics.length, icon: Building2 },
     { label: "Ativas/trial", value: totalAtivas, icon: UsersRound },
     { label: "Inadimplentes", value: inadimplentes, icon: ShieldAlert },
     { label: "MRR potencial", value: formatMoney(receitaPotencial), icon: CreditCard },
   ];
 
   return (
-    <main className="px-5 py-8 sm:px-8 lg:px-10">
-      <section className="mx-auto max-w-7xl">
-        <PageHeader
-          eyebrow="Admin interno"
-          title="SaaS comercial"
-          description="Gerencie planos, limites, status de assinatura e vínculos de cobrança das clínicas. Esta área só abre para e-mails em INTERNAL_ADMIN_EMAILS."
-        />
+    <main className="min-h-screen bg-[#f7f7f4] text-neutral-950">
+      <aside className="fixed inset-x-0 top-0 z-20 border-b border-neutral-200 bg-neutral-950 text-white">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
+          <Link href="/admin" className="flex items-center gap-2 text-emerald-300">
+            <Sparkles size={19} />
+            <span className="text-sm font-bold uppercase tracking-[0.18em]">Admin SaaS</span>
+          </Link>
+          <div className="flex items-center gap-4">
+            <span className="hidden text-sm text-neutral-300 sm:inline">{user.email}</span>
+            <form action={signOutAction}>
+              <input type="hidden" name="next" value="/login" />
+              <button className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/15 px-3 text-sm font-semibold text-neutral-200 hover:bg-white/10" type="submit">
+                <LogOut size={16} />
+                Sair
+              </button>
+            </form>
+          </div>
+        </div>
+      </aside>
+
+      <section className="mx-auto max-w-7xl px-5 pb-10 pt-24 sm:px-8 lg:px-10">
+        <div className="border-b border-neutral-200 pb-6">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">Admin interno</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">SaaS comercial</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600">Gerencie planos, limites, status de assinatura, cobranca e bloqueio das clinicas. Esta area nao faz parte do dashboard da clinica cliente.</p>
+        </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => {
@@ -85,7 +106,7 @@ export default async function AdminSaasPage() {
         <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_400px]">
           <section className="space-y-4">
             {clinics.length === 0 ? (
-              <p className="rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-600 shadow-sm">Nenhuma clínica cadastrada.</p>
+              <p className="rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-600 shadow-sm">Nenhuma clinica cadastrada.</p>
             ) : clinics.map((clinic) => {
               const plan = planMap.get(clinic.plano) || plans[0];
               return (
@@ -98,13 +119,13 @@ export default async function AdminSaasPage() {
                           <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-bold uppercase text-neutral-700">{clinic.status}</span>
                           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase text-emerald-700">{clinic.plano}</span>
                         </div>
-                        <p className="mt-2 text-sm text-neutral-500">{clinic.email || clinic.billing_email || "Sem e-mail"} · {clinic.cidade || "Cidade não informada"}</p>
+                        <p className="mt-2 text-sm text-neutral-500">{clinic.email || clinic.billing_email || "Sem e-mail"} · {clinic.cidade || "Cidade nao informada"}</p>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-neutral-600 sm:grid-cols-4 lg:min-w-[420px]">
-                        <span className="rounded-lg bg-neutral-50 px-3 py-2">Usuários <b>{limitText(clinic.usage.usuarios, plan?.limite_usuarios || 0)}</b></span>
+                        <span className="rounded-lg bg-neutral-50 px-3 py-2">Usuarios <b>{limitText(clinic.usage.usuarios, plan?.limite_usuarios || 0)}</b></span>
                         <span className="rounded-lg bg-neutral-50 px-3 py-2">Profissionais <b>{limitText(clinic.usage.profissionais, plan?.limite_profissionais || 0)}</b></span>
                         <span className="rounded-lg bg-neutral-50 px-3 py-2">Clientes <b>{limitText(clinic.usage.clientes, plan?.limite_clientes || 0)}</b></span>
-                        <span className="rounded-lg bg-neutral-50 px-3 py-2">Agenda/mês <b>{limitText(clinic.usage.agendamentos_mes, plan?.limite_agendamentos_mes || 0)}</b></span>
+                        <span className="rounded-lg bg-neutral-50 px-3 py-2">Agenda/mes <b>{limitText(clinic.usage.agendamentos_mes, plan?.limite_agendamentos_mes || 0)}</b></span>
                       </div>
                     </div>
                   </summary>
@@ -121,12 +142,12 @@ export default async function AdminSaasPage() {
                       {plans.map((planOption) => <option key={planOption.slug} value={planOption.slug}>{planOption.nome} · {formatMoney(planOption.preco_mensal)}</option>)}
                     </SelectField>
                     <Field label="Fim do trial" name="trial_ends_at" type="date" defaultValue={formatDateInput(clinic.trial_ends_at)} />
-                    <Field label="E-mail cobrança" name="billing_email" type="email" defaultValue={clinic.billing_email || clinic.email || ""} />
-                    <Field label="Próxima cobrança" name="proxima_cobranca_em" type="date" defaultValue={clinic.proxima_cobranca_em || ""} />
+                    <Field label="E-mail cobranca" name="billing_email" type="email" defaultValue={clinic.billing_email || clinic.email || ""} />
+                    <Field label="Proxima cobranca" name="proxima_cobranca_em" type="date" defaultValue={clinic.proxima_cobranca_em || ""} />
                     <Field label="Asaas customer ID" name="asaas_customer_id" defaultValue={clinic.asaas_customer_id || ""} />
                     <Field label="Asaas subscription ID" name="asaas_subscription_id" defaultValue={clinic.asaas_subscription_id || ""} />
-                    <div className="md:col-span-3"><TextArea label="Motivo de bloqueio/observação" name="bloqueio_motivo" defaultValue={clinic.bloqueio_motivo || ""} /></div>
-                    <div className="md:col-span-3"><SubmitButton>Salvar clínica</SubmitButton></div>
+                    <div className="md:col-span-3"><TextArea label="Motivo de bloqueio/observacao" name="bloqueio_motivo" defaultValue={clinic.bloqueio_motivo || ""} /></div>
+                    <div className="md:col-span-3"><SubmitButton>Salvar clinica</SubmitButton></div>
                   </form>
                 </details>
               );
@@ -142,11 +163,11 @@ export default async function AdminSaasPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-semibold">{plan.nome}</p>
-                        <p className="mt-1 text-xs text-neutral-500">{plan.slug} · {formatMoney(plan.preco_mensal)}/mês</p>
+                        <p className="mt-1 text-xs text-neutral-500">{plan.slug} · {formatMoney(plan.preco_mensal)}/mes</p>
                       </div>
                       <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-700">{plan.ativo ? "ativo" : "inativo"}</span>
                     </div>
-                    <p className="mt-3 text-xs leading-5 text-neutral-600">{plan.limite_usuarios} usuários · {plan.limite_profissionais} profissionais · {plan.limite_clientes} clientes · {plan.limite_agendamentos_mes} agendamentos/mês</p>
+                    <p className="mt-3 text-xs leading-5 text-neutral-600">{plan.limite_usuarios} usuarios · {plan.limite_profissionais} profissionais · {plan.limite_clientes} clientes · {plan.limite_agendamentos_mes} agendamentos/mes</p>
                   </div>
                 ))}
               </div>
@@ -157,15 +178,15 @@ export default async function AdminSaasPage() {
               <div className="mt-4 space-y-4">
                 <Field label="Slug" name="slug" placeholder="starter" required />
                 <Field label="Nome" name="nome" placeholder="Starter" required />
-                <Field label="Preço mensal" name="preco_mensal" type="number" defaultValue="0" />
+                <Field label="Preco mensal" name="preco_mensal" type="number" defaultValue="0" />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Usuários" name="limite_usuarios" type="number" defaultValue="3" />
+                  <Field label="Usuarios" name="limite_usuarios" type="number" defaultValue="3" />
                   <Field label="Profissionais" name="limite_profissionais" type="number" defaultValue="3" />
                   <Field label="Clientes" name="limite_clientes" type="number" defaultValue="300" />
-                  <Field label="Agendamentos/mês" name="limite_agendamentos_mes" type="number" defaultValue="500" />
+                  <Field label="Agendamentos/mes" name="limite_agendamentos_mes" type="number" defaultValue="500" />
                 </div>
                 <Field label="Ordem" name="ordem" type="number" defaultValue="0" />
-                <TextArea label="Descrição" name="descricao" />
+                <TextArea label="Descricao" name="descricao" />
                 <label className="flex items-center gap-2 text-sm font-medium text-neutral-700"><input name="ativo" type="checkbox" defaultChecked /> Plano ativo</label>
                 <SubmitButton>Salvar plano</SubmitButton>
               </div>

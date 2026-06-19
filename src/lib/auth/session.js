@@ -13,11 +13,11 @@ export async function getCurrentUser() {
   return data.user;
 }
 
-export async function requireUser() {
+export async function requireUser(loginPath = "/login-cliente") {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(loginPath);
   }
 
   return user;
@@ -33,7 +33,7 @@ export async function getUserClinics() {
 
   const { data, error } = await supabase
     .from("usuarios_clinica")
-    .select("id, clinica_id, papel, nome, email, ativo, clinicas(id, nome, slug, cidade, estado, status, plano)")
+    .select("id, clinica_id, papel, nome, email, ativo, clinicas(id, nome, slug, documento, telefone, email, cidade, estado, status, plano, metadata, trial_ends_at, billing_email, asaas_customer_id, asaas_subscription_id, assinatura_status, proxima_cobranca_em, bloqueada_em, bloqueio_motivo)")
     .eq("ativo", true)
     .order("created_at", { ascending: true });
 
@@ -54,11 +54,14 @@ export async function requireClinic() {
 
   return context;
 }
+
 export async function requireInternalAdmin() {
-  const user = await requireUser();
+  const user = await requireUser("/login?next=/admin");
 
   if (!isInternalAdminEmail(user.email)) {
-    redirect("/dashboard");
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+    redirect("/login?erro=admin");
   }
 
   return user;
