@@ -22,7 +22,7 @@ function SelectField({ label, name, defaultValue = "", required = false, childre
   return (
     <label className="block">
       <span className="text-sm font-medium text-neutral-700">{label}</span>
-      <select name={name} defaultValue={defaultValue || ""} required={required} className="mt-2 h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-600">
+      <select name={name} defaultValue={defaultValue || ""} required={required} className="mt-2 h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none transition focus:border-[var(--clinic-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--clinic-primary)_18%,transparent)]">
         {children}
       </select>
     </label>
@@ -96,7 +96,7 @@ export default async function FinanceiroPage({ searchParams }) {
             const Icon = card.icon;
             return (
               <div key={card.label} className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between"><p className="text-sm text-neutral-500">{card.label}</p><Icon size={18} className="text-emerald-700" /></div>
+                <div className="flex items-center justify-between"><p className="text-sm text-neutral-500">{card.label}</p><Icon size={18} className="text-[var(--clinic-primary)]" /></div>
                 <strong className="mt-2 block text-2xl">{card.value}</strong>
               </div>
             );
@@ -203,4 +203,5 @@ export default async function FinanceiroPage({ searchParams }) {
     </main>
   );
 }
+
 

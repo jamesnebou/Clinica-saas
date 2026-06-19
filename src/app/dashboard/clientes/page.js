@@ -61,13 +61,13 @@ export default async function ClientesPage() {
                         Origem: {cliente.origem || "-"} · LGPD: {cliente.consentimento_lgpd ? "sim" : "nao"} · Termo: {cliente.termo_consentimento_aceito ? "aceito" : "pendente"}
                       </p>
                       {cliente.retorno_recomendado_em ? (
-                        <p className="mt-1 text-xs font-semibold text-emerald-700">
+                        <p className="mt-1 text-xs font-semibold text-[var(--clinic-primary)]">
                           Retorno recomendado: {new Date(`${cliente.retorno_recomendado_em}T12:00:00`).toLocaleDateString("pt-BR")}
                         </p>
                       ) : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Link href={`/dashboard/clientes/${cliente.id}`} className="inline-flex h-9 items-center rounded-lg border border-emerald-200 px-3 text-sm font-semibold text-emerald-700">
+                      <Link href={`/dashboard/clientes/${cliente.id}`} className="inline-flex h-9 items-center rounded-lg border border-[color-mix(in_srgb,var(--clinic-primary)_24%,#e5e5e5)] px-3 text-sm font-semibold text-[var(--clinic-primary)]">
                         Abrir ficha
                       </Link>
                       <form action={updateClienteStatusAction} className="flex gap-2">
@@ -95,4 +95,5 @@ export default async function ClientesPage() {
     </main>
   );
 }
+
 

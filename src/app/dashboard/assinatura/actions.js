@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -14,6 +14,11 @@ function text(formData, key) {
 function requireValue(value, message) {
   if (!value) throw new Error(message);
   return value;
+}
+
+function redirectSubscriptionError(error, fallback = "upgrade") {
+  const params = new URLSearchParams({ erro: fallback, mensagem: error?.message || "Nao foi possível processar a assinatura agora." });
+  redirect(`/dashboard/assinatura?${params.toString()}`);
 }
 
 function nextBillingDate() {
@@ -44,7 +49,12 @@ async function getFullClinic(clinicaId) {
 
 export async function startSubscriptionAction(formData) {
   const { activeClinic, memberships } = await requireClinic();
-  ensureCanManageSubscription(memberships, activeClinic);
+
+  try {
+    ensureCanManageSubscription(memberships, activeClinic);
+  } catch (error) {
+    redirectSubscriptionError(error, "permissao");
+  }
 
   const planSlug = requireValue(text(formData, "plano"), "Plano nao informado.");
   const billingEmail = text(formData, "billing_email") || activeClinic.billing_email || activeClinic.email;
@@ -55,10 +65,15 @@ export async function startSubscriptionAction(formData) {
     redirect("/dashboard/assinatura?erro=plano");
   }
 
-  const clinic = await getFullClinic(activeClinic.id);
+  let clinic;
+  try {
+    clinic = await getFullClinic(activeClinic.id);
+  } catch (error) {
+    redirectSubscriptionError(error, "clinica");
+  }
 
   if (!isAsaasConfigured()) {
-    await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from("clinicas")
       .update({
         plano: plan.slug,
@@ -72,25 +87,32 @@ export async function startSubscriptionAction(formData) {
       })
       .eq("id", clinic.id);
 
+    if (error) redirectSubscriptionError(error, "upgrade");
+
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/assinatura");
     redirect("/dashboard/assinatura?erro=asaas");
   }
 
   let customerId = clinic.asaas_customer_id;
+  let subscription;
 
-  if (!customerId) {
-    const customer = await createAsaasCustomerForClinic({ ...clinic, billing_email: billingEmail });
-    customerId = customer.id;
+  try {
+    if (!customerId) {
+      const customer = await createAsaasCustomerForClinic({ ...clinic, billing_email: billingEmail });
+      customerId = customer.id;
+    }
+
+    subscription = await createAsaasSubscriptionForClinic({
+      clinic: { ...clinic, billing_email: billingEmail },
+      plan,
+      customerId,
+    });
+  } catch (error) {
+    redirectSubscriptionError(error, "asaas_api");
   }
 
-  const subscription = await createAsaasSubscriptionForClinic({
-    clinic: { ...clinic, billing_email: billingEmail },
-    plan,
-    customerId,
-  });
-
-  await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from("clinicas")
     .update({
       plano: plan.slug,
@@ -110,6 +132,8 @@ export async function startSubscriptionAction(formData) {
     })
     .eq("id", clinic.id);
 
+  if (error) redirectSubscriptionError(error, "upgrade");
+
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/assinatura");
   redirect("/dashboard/assinatura?ok=assinatura");
@@ -117,7 +141,12 @@ export async function startSubscriptionAction(formData) {
 
 export async function updateBillingEmailAction(formData) {
   const { activeClinic, memberships } = await requireClinic();
-  ensureCanManageSubscription(memberships, activeClinic);
+
+  try {
+    ensureCanManageSubscription(memberships, activeClinic);
+  } catch (error) {
+    redirectSubscriptionError(error, "permissao");
+  }
 
   const billingEmail = requireValue(text(formData, "billing_email"), "Informe o e-mail de cobranca.");
 
@@ -126,7 +155,9 @@ export async function updateBillingEmailAction(formData) {
     .update({ billing_email: billingEmail })
     .eq("id", activeClinic.id);
 
-  if (error) throw error;
+  if (error) redirectSubscriptionError(error, "email");
   revalidatePath("/dashboard/assinatura");
   redirect("/dashboard/assinatura?ok=email");
 }
+
+

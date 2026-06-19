@@ -1,5 +1,5 @@
 ﻿import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Clock, MessageCircle, XCircle } from "lucide-react";
+import { AlertTriangle, CalendarRange, CheckCircle2, Clock, MessageCircle, XCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireClinic } from "@/lib/auth/session";
 import { EmptyClinicState, EmptyState, Field, PageHeader, SubmitButton, TextArea } from "@/components/app-shell/ui";
@@ -9,7 +9,7 @@ export const metadata = { title: "Agenda | Clinica SaaS" };
 
 const statusConfig = {
   agendado: { label: "Agendado", className: "border-blue-200 bg-blue-50 text-blue-700", icon: Clock },
-  confirmado: { label: "Confirmado", className: "border-emerald-200 bg-emerald-50 text-emerald-700", icon: CheckCircle2 },
+  confirmado: { label: "Confirmado", className: "border-[color-mix(in_srgb,var(--clinic-primary)_24%,#e5e5e5)] bg-[color-mix(in_srgb,var(--clinic-accent)_10%,white)] text-[var(--clinic-primary)]", icon: CheckCircle2 },
   em_atendimento: { label: "Em atendimento", className: "border-violet-200 bg-violet-50 text-violet-700", icon: Clock },
   concluido: { label: "Concluido", className: "border-neutral-200 bg-neutral-100 text-neutral-700", icon: CheckCircle2 },
   faltou: { label: "Faltou", className: "border-amber-200 bg-amber-50 text-amber-800", icon: AlertTriangle },
@@ -56,6 +56,30 @@ function dayRange(dateString) {
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
+function weekRange(dateString) {
+  const date = new Date(`${dateString}T12:00:00`);
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const startDate = new Date(date);
+  startDate.setDate(date.getDate() + diff);
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const item = new Date(startDate);
+    item.setDate(startDate.getDate() + index);
+    return toDateInput(item);
+  });
+  const start = new Date(`${days[0]}T00:00:00`);
+  const end = new Date(`${days[6]}T00:00:00`);
+  end.setDate(end.getDate() + 1);
+  return { days, weekStart: start.toISOString(), weekEnd: end.toISOString() };
+}
+
+function fillWhatsAppTemplate(template, { cliente, data, procedimento }) {
+  return String(template || "Ola, {cliente}. Passando para confirmar seu horario na clinica em {data}.")
+    .replaceAll("{cliente}", cliente || "tudo bem")
+    .replaceAll("{data}", data || "")
+    .replaceAll("{procedimento}", procedimento || "procedimento");
+}
+
 function StatusBadge({ status }) {
   const config = statusConfig[status] || statusConfig.agendado;
   const Icon = config.icon;
@@ -72,7 +96,7 @@ function SelectField({ label, name, defaultValue = "", required = false, childre
   return (
     <label className="block">
       <span className="text-sm font-medium text-neutral-700">{label}</span>
-      <select name={name} defaultValue={defaultValue || ""} required={required} className="mt-2 h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-600">
+      <select name={name} defaultValue={defaultValue || ""} required={required} className="mt-2 h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none transition focus:border-[var(--clinic-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--clinic-primary)_18%,transparent)]">
         {children}
       </select>
     </label>
@@ -85,6 +109,7 @@ export default async function AgendaPage({ searchParams }) {
   const selectedProfessional = String(params?.profissional || "");
   const errorMessage = params?.error ? String(params.error) : "";
   const { start, end } = dayRange(selectedDate);
+  const { days: weekDays, weekStart, weekEnd } = weekRange(selectedDate);
   const { activeClinic } = await requireClinic();
 
   if (!activeClinic) {
@@ -100,21 +125,31 @@ export default async function AgendaPage({ searchParams }) {
     .lt("inicio", end)
     .order("inicio", { ascending: true });
 
+  let weekQuery = supabase
+    .from("agendamentos")
+    .select("id, inicio, status, valor")
+    .eq("clinica_id", activeClinic.id)
+    .gte("inicio", weekStart)
+    .lt("inicio", weekEnd);
+
   if (selectedProfessional) {
     agendaQuery = agendaQuery.eq("profissional_id", selectedProfessional);
+    weekQuery = weekQuery.eq("profissional_id", selectedProfessional);
   }
 
-  const [clientesResult, profissionaisResult, procedimentosResult, agendamentosResult] = await Promise.all([
+  const [clientesResult, profissionaisResult, procedimentosResult, agendamentosResult, weekResult] = await Promise.all([
     supabase.from("clientes").select("id, nome, telefone").eq("clinica_id", activeClinic.id).order("nome"),
     supabase.from("profissionais").select("id, nome, especialidade").eq("clinica_id", activeClinic.id).eq("ativo", true).order("nome"),
     supabase.from("procedimentos").select("id, nome, preco, duracao_minutos").eq("clinica_id", activeClinic.id).eq("ativo", true).order("nome"),
     agendaQuery,
+    weekQuery,
   ]);
 
   const clientes = clientesResult.data || [];
   const profissionais = profissionaisResult.data || [];
   const procedimentos = procedimentosResult.data || [];
   const agendamentos = agendamentosResult.data || [];
+  const agendamentosSemana = weekResult.data || [];
   const faturamentoPrevisto = agendamentos
     .filter((item) => !["cancelado", "faltou"].includes(item.status))
     .reduce((acc, item) => acc + Number(item.valor || 0), 0);
@@ -156,6 +191,23 @@ export default async function AgendaPage({ searchParams }) {
           <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{errorMessage}</div>
         ) : null}
 
+        <section className="mt-6 rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2"><CalendarRange size={18} className="text-[var(--clinic-primary)]" /><h2 className="text-sm font-bold uppercase tracking-[0.16em] text-neutral-700">Visao semanal</h2></div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
+            {weekDays.map((day) => {
+              const items = agendamentosSemana.filter((item) => toDateInput(new Date(item.inicio)) === day);
+              const total = items.filter((item) => !["cancelado", "faltou"].includes(item.status)).reduce((acc, item) => acc + Number(item.valor || 0), 0);
+              return (
+                <Link key={day} href={`/dashboard/agenda?date=${day}${selectedProfessional ? `&profissional=${selectedProfessional}` : ""}`} className={`rounded-lg border p-3 text-sm transition hover:border-[color-mix(in_srgb,var(--clinic-primary)_38%,#d4d4d4)] hover:bg-[color-mix(in_srgb,var(--clinic-accent)_10%,white)] ${day === selectedDate ? "border-[color-mix(in_srgb,var(--clinic-primary)_38%,#d4d4d4)] bg-[color-mix(in_srgb,var(--clinic-accent)_10%,white)]" : "border-neutral-200 bg-white"}`}>
+                  <p className="font-semibold text-neutral-900">{new Date(`${day}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" })}</p>
+                  <p className="mt-2 text-xs text-neutral-500">{items.length} atend.</p>
+                  <p className="mt-1 text-xs font-semibold text-neutral-700">{formatMoney(total)}</p>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
         <div className="mt-8 grid gap-6 lg:grid-cols-[420px_1fr]">
           <form action={createAgendamentoAction} className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
             <input type="hidden" name="agenda_date" value={selectedDate} />
@@ -164,11 +216,12 @@ export default async function AgendaPage({ searchParams }) {
             <div className="mt-4 space-y-4">
               <SelectField label="Cliente" name="cliente_id" required><option value="">Selecione</option>{clientes.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}</SelectField>
               <SelectField label="Profissional" name="profissional_id" defaultValue={selectedProfessional} required><option value="">Selecione</option>{profissionais.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}</SelectField>
-              <SelectField label="Procedimento" name="procedimento_id" required><option value="">Selecione</option>{procedimentos.map((item) => <option key={item.id} value={item.id}>{item.nome} · {formatMoney(item.preco)}</option>)}</SelectField>
+              <SelectField label="Procedimento" name="procedimento_id" required><option value="">Selecione</option>{procedimentos.map((item) => <option key={item.id} value={item.id}>{item.nome} - {formatMoney(item.preco)} - {item.duracao_minutos} min</option>)}</SelectField>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Inicio" name="inicio" type="datetime-local" required defaultValue={`${selectedDate}T09:00`} />
-                <Field label="Fim" name="fim" type="datetime-local" required defaultValue={`${selectedDate}T10:00`} />
+                <Field label="Fim (opcional)" name="fim" type="datetime-local" />
               </div>
+              <p className="text-xs leading-5 text-neutral-500">Se o fim ficar vazio, o sistema calcula pela duracao do procedimento.</p>
               <Field label="Valor" name="valor" type="number" defaultValue="0" />
               <TextArea label="Observacoes" name="observacoes" />
               <SubmitButton>Agendar</SubmitButton>
@@ -181,7 +234,12 @@ export default async function AgendaPage({ searchParams }) {
               {agendamentos.length === 0 ? (
                 <EmptyState title="Agenda livre neste dia" description="Crie um atendimento para demonstrar confirmação, status visual, WhatsApp rápido e faturamento previsto." />
               ) : agendamentos.map((item) => {
-                const whats = whatsappUrl(item.clientes?.telefone, `Olá, ${item.clientes?.nome || "tudo bem"}? Passando para confirmar seu horário na clínica em ${new Date(item.inicio).toLocaleString("pt-BR")}.`);
+                const whatsMessage = fillWhatsAppTemplate(activeClinic.metadata?.whatsapp_mensagem_padrao, {
+                  cliente: item.clientes?.nome,
+                  data: new Date(item.inicio).toLocaleString("pt-BR"),
+                  procedimento: item.procedimentos?.nome,
+                });
+                const whats = whatsappUrl(item.clientes?.telefone, whatsMessage);
                 return (
                   <article key={item.id} className="rounded-lg border border-neutral-200 p-4">
                     <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
@@ -191,7 +249,7 @@ export default async function AgendaPage({ searchParams }) {
                         <p className="mt-1 text-xs text-neutral-500">{new Date(item.inicio).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} - {new Date(item.fim).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {formatMoney(item.valor)}</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {whats ? <a className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 px-3 text-sm font-semibold text-emerald-700" href={whats} target="_blank" rel="noreferrer"><MessageCircle size={15} /> WhatsApp</a> : null}
+                        {whats ? <a className="inline-flex h-9 items-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--clinic-primary)_24%,#e5e5e5)] px-3 text-sm font-semibold text-[var(--clinic-primary)]" href={whats} target="_blank" rel="noreferrer"><MessageCircle size={15} /> WhatsApp</a> : null}
                         <form action={updateAgendamentoStatusAction} className="flex gap-2">
                           <input type="hidden" name="id" value={item.id} />
                           <input type="hidden" name="agenda_date" value={selectedDate} />
@@ -217,7 +275,7 @@ export default async function AgendaPage({ searchParams }) {
                         </div>
                         <div className="grid gap-4 md:grid-cols-4">
                           <Field label="Inicio" name="inicio" type="datetime-local" defaultValue={toDatetimeLocal(item.inicio)} required />
-                          <Field label="Fim" name="fim" type="datetime-local" defaultValue={toDatetimeLocal(item.fim)} required />
+                          <Field label="Fim" name="fim" type="datetime-local" defaultValue={toDatetimeLocal(item.fim)} />
                           <Field label="Valor" name="valor" type="number" defaultValue={String(item.valor || 0)} />
                           <SelectField label="Status" name="status" defaultValue={item.status}>{Object.entries(statusConfig).map(([value, config]) => <option key={value} value={value}>{config.label}</option>)}</SelectField>
                         </div>
@@ -243,5 +301,7 @@ export default async function AgendaPage({ searchParams }) {
     </main>
   );
 }
+
+
 
 

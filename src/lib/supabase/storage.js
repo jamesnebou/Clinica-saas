@@ -1,7 +1,10 @@
-import { supabaseAdmin } from "@/lib/supabase/admin";
+﻿import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const CLIENT_PHOTOS_BUCKET = "cliente-fotos";
+export const CLINIC_LOGOS_BUCKET = "clinica-logos";
+
 const MAX_CLIENT_PHOTO_BYTES = 10 * 1024 * 1024;
+const MAX_CLINIC_LOGO_BYTES = 30 * 1024 * 1024;
 
 function sanitizeFileName(name = "foto") {
   return String(name || "foto")
@@ -23,7 +26,7 @@ export async function uploadClientPhoto({ clinicaId, clienteId, file }) {
   }
 
   if (file.size > MAX_CLIENT_PHOTO_BYTES) {
-    throw new Error("A imagem precisa ter no máximo 10 MB.");
+    throw new Error("A imagem precisa ter no maximo 10 MB.");
   }
 
   const extension = file.name?.includes(".") ? file.name.split(".").pop() : "jpg";
@@ -42,6 +45,43 @@ export async function uploadClientPhoto({ clinicaId, clienteId, file }) {
 
   return {
     path,
+    mimeType: file.type || null,
+    size: file.size || null,
+  };
+}
+
+export async function uploadClinicLogo({ clinicaId, file }) {
+  if (!file || typeof file.arrayBuffer !== "function" || file.size <= 0) {
+    return null;
+  }
+
+  if (!file.type?.startsWith("image/")) {
+    throw new Error("Envie apenas arquivos de imagem para a logo.");
+  }
+
+  if (file.size > MAX_CLINIC_LOGO_BYTES) {
+    throw new Error("A logo precisa ter no maximo 30 MB.");
+  }
+
+  const extension = file.name?.includes(".") ? file.name.split(".").pop() : "jpg";
+  const filename = `${Date.now()}-${sanitizeFileName(file.name || `logo.${extension}`)}`;
+  const path = `${clinicaId}/${filename}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  const { error } = await supabaseAdmin.storage
+    .from(CLINIC_LOGOS_BUCKET)
+    .upload(path, buffer, {
+      contentType: file.type || "image/jpeg",
+      upsert: true,
+    });
+
+  if (error) throw error;
+
+  const { data } = supabaseAdmin.storage.from(CLINIC_LOGOS_BUCKET).getPublicUrl(path);
+
+  return {
+    path,
+    publicUrl: data?.publicUrl || "",
     mimeType: file.type || null,
     size: file.size || null,
   };

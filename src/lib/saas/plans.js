@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase/admin";
+﻿import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const ACTIVE_CLINIC_STATUSES = new Set(["trial", "ativa"]);
 export const BILLING_WARNING_STATUSES = new Set(["trial", "inadimplente", "cancelada", "bloqueada"]);
@@ -163,10 +163,16 @@ export async function assertClinicLimit({ clinic, resource }) {
   if (!config) return;
 
   const plan = await getClinicPlan(clinic);
-  const { count, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from(config.table)
     .select("id", { count: "exact", head: true })
     .eq("clinica_id", clinic.id);
+
+  if (["usuarios", "profissionais"].includes(resource)) {
+    query = query.eq("ativo", true);
+  }
+
+  const { count, error } = await query;
 
   if (error) throw error;
 
@@ -174,3 +180,4 @@ export async function assertClinicLimit({ clinic, resource }) {
     throw new Error(`Limite de ${plan[config.limitKey]} ${resource} atingido no plano ${plan.nome}.`);
   }
 }
+

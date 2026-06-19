@@ -1,11 +1,13 @@
-﻿import { createClient } from "@/lib/supabase/server";
+﻿import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import { requireClinic } from "@/lib/auth/session";
 import { EmptyClinicState, EmptyState, Field, PageHeader, SubmitButton, TextArea } from "@/components/app-shell/ui";
 import { createProfissionalAction, deleteProfissionalAction, toggleProfissionalAction } from "../actions";
 
 export const metadata = { title: "Profissionais | Clinica SaaS" };
 
-export default async function ProfissionaisPage() {
+export default async function ProfissionaisPage({ searchParams }) {
+  const params = await searchParams;
   const { activeClinic } = await requireClinic();
 
   if (!activeClinic) {
@@ -24,6 +26,14 @@ export default async function ProfissionaisPage() {
       <section className="mx-auto max-w-7xl">
         <PageHeader eyebrow="Equipe" title="Profissionais" description="Cadastre especialistas, comissoes e status de atendimento." />
 
+        {params?.erro === "limite" ? (
+          <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <p className="font-semibold">Limite do plano atingido</p>
+            <p className="mt-1 leading-6">{params?.mensagem || "Seu plano atual chegou ao limite de profissionais cadastrados."}</p>
+            <Link href="/dashboard/assinatura" className="mt-3 inline-flex h-10 items-center rounded-lg bg-neutral-950 px-4 text-sm font-semibold text-white">Ver opcoes de upgrade</Link>
+          </div>
+        ) : null}
+
         <div className="mt-8 grid gap-6 lg:grid-cols-[420px_1fr]">
           <form action={createProfissionalAction} className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-semibold">Novo profissional</h2>
@@ -31,7 +41,7 @@ export default async function ProfissionaisPage() {
               <Field label="Nome" name="nome" required />
               <Field label="Telefone" name="telefone" />
               <Field label="E-mail" name="email" type="email" />
-              <Field label="Especialidade" name="especialidade" placeholder="Esteticista, biomédica, fisioterapeuta..." />
+              <Field label="Especialidade" name="especialidade" placeholder="Esteticista, biomedica, fisioterapeuta..." />
               <Field label="Comissao (%)" name="comissao_percentual" type="number" defaultValue="0" />
               <TextArea label="Observacoes" name="observacoes" />
               <SubmitButton>Cadastrar profissional</SubmitButton>
@@ -42,14 +52,14 @@ export default async function ProfissionaisPage() {
             <h2 className="text-lg font-semibold">Equipe cadastrada</h2>
             <div className="mt-4 space-y-3">
               {profissionais.length === 0 ? (
-                <EmptyState title="Equipe ainda não cadastrada" description="Inclua profissionais para filtrar a agenda, calcular comissões e evitar conflitos de horário." />
+                <EmptyState title="Equipe ainda nao cadastrada" description="Inclua profissionais para filtrar a agenda, calcular comissoes e evitar conflitos de horario." />
               ) : profissionais.map((item) => (
                 <article key={item.id} className="rounded-lg border border-neutral-200 p-4">
                   <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                     <div>
                       <h3 className="font-semibold">{item.nome}</h3>
                       <p className="mt-1 text-sm text-neutral-600">{item.especialidade || "Sem especialidade"}</p>
-                      <p className="mt-1 text-xs text-neutral-500">{item.telefone || "Sem telefone"} · Comissão: {Number(item.comissao_percentual || 0)}%</p>
+                      <p className="mt-1 text-xs text-neutral-500">{item.telefone || "Sem telefone"} - Comissao: {Number(item.comissao_percentual || 0)}%</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <form action={toggleProfissionalAction}>
@@ -74,4 +84,3 @@ export default async function ProfissionaisPage() {
     </main>
   );
 }
-

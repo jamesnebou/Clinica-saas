@@ -13,7 +13,7 @@ export function PageHeader({ eyebrow, title, description, action }) {
   return (
     <div className="flex flex-col gap-4 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{eyebrow}</p>
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--clinic-primary)]">{eyebrow}</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">{title}</h1>
         {description ? <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">{description}</p> : null}
       </div>
@@ -27,7 +27,7 @@ export function Field({ label, name, type = "text", required = false, placeholde
     <label className="block">
       <span className="text-sm font-medium text-neutral-700">{label}</span>
       <input
-        className="mt-2 h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-600"
+        className="mt-2 h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none transition focus:border-[var(--clinic-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--clinic-primary)_18%,transparent)]"
         name={name}
         type={type}
         required={required}
@@ -43,7 +43,7 @@ export function TextArea({ label, name, placeholder = "", defaultValue = "" }) {
     <label className="block">
       <span className="text-sm font-medium text-neutral-700">{label}</span>
       <textarea
-        className="mt-2 min-h-24 w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-emerald-600"
+        className="mt-2 min-h-24 w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-[var(--clinic-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--clinic-primary)_18%,transparent)]"
         name={name}
         placeholder={placeholder}
         defaultValue={defaultValue}
@@ -54,17 +54,18 @@ export function TextArea({ label, name, placeholder = "", defaultValue = "" }) {
 
 export function SubmitButton({ children }) {
   return (
-    <button className="h-11 rounded-lg bg-neutral-950 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800" type="submit">
+    <button className="h-11 rounded-lg bg-[var(--clinic-primary)] px-5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95" type="submit">
       {children}
     </button>
   );
 }
 export function EmptyState({ title, description, action }) {
   return (
-    <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 px-4 py-6 text-center">
+    <div className="rounded-lg border border-dashed border-[color-mix(in_srgb,var(--clinic-primary)_28%,#d4d4d4)] bg-[color-mix(in_srgb,var(--clinic-accent)_8%,white)] px-4 py-6 text-center">
       <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
       {description ? <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-600">{description}</p> : null}
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );
 }
+
