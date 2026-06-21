@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, CreditCard, KanbanSquare, LayoutDashboard, ReceiptText, Scissors, Settings, Stethoscope, UserCog, UsersRound } from "lucide-react";
+import { CalendarDays, CreditCard, KanbanSquare, LayoutDashboard, Menu, ReceiptText, Scissors, Settings, Stethoscope, UserCog, UsersRound, X } from "lucide-react";
+import { useState } from "react";
 
 const iconMap = {
   dashboard: LayoutDashboard,
@@ -21,7 +22,7 @@ export function SidebarNav({ items }) {
   const pathname = usePathname();
 
   return (
-    <nav className="mt-5 flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+    <nav className="relative mt-5 flex gap-2 overflow-x-auto pb-1 md:flex-col md:overflow-visible md:pb-0">
       {items.map((item) => {
         const Icon = iconMap[item.icon] || LayoutDashboard;
         const active = item.href === "/dashboard" ? pathname === "/dashboard" : pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -33,8 +34,8 @@ export function SidebarNav({ items }) {
             className={[
               "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition",
               active
-                ? "bg-[color-mix(in_srgb,var(--clinic-accent)_16%,white)] text-[var(--clinic-primary)] shadow-sm"
-                : "text-neutral-600 hover:bg-[color-mix(in_srgb,var(--clinic-accent)_12%,white)] hover:text-[var(--clinic-primary)]",
+                ? "bg-[linear-gradient(135deg,color-mix(in_srgb,var(--clinic-accent)_20%,white),rgba(255,255,255,0.82))] text-[var(--clinic-primary)] shadow-[0_12px_26px_color-mix(in_srgb,var(--clinic-primary)_14%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--clinic-primary)_16%,transparent)]"
+                : "text-neutral-600 hover:bg-white/75 hover:text-[var(--clinic-primary)] hover:shadow-sm",
             ].join(" ")}
           >
             <Icon size={17} />
@@ -43,5 +44,72 @@ export function SidebarNav({ items }) {
         );
       })}
     </nav>
+  );
+}
+
+export function MobileSidebarMenu({ items, brandName, logoUrl }) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/95 px-5 py-3 shadow-sm backdrop-blur-xl md:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt={`Logo ${brandName}`} className="h-10 w-10 rounded-lg object-contain" />
+            ) : (
+              <div className="h-10 w-10 rounded-lg bg-[var(--clinic-primary)]" />
+            )}
+            <p className="truncate text-sm font-bold uppercase tracking-[0.16em] text-[var(--clinic-primary)]">{brandName}</p>
+          </div>
+            <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 bg-white/70 text-neutral-700 shadow-sm"
+            aria-label={open ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={open}
+          >
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+      </header>
+
+      {open ? (
+        <div className="fixed inset-0 z-50 bg-neutral-950/35 backdrop-blur-sm md:hidden" onClick={() => setOpen(false)}>
+          <nav className="premium-panel h-full w-[min(340px,86vw)] rounded-none border-y-0 border-l-0 p-5 shadow-xl" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <p className="truncate text-sm font-bold uppercase tracking-[0.16em] text-[var(--clinic-primary)]">{brandName}</p>
+              <button type="button" onClick={() => setOpen(false)} className="rounded-lg border border-neutral-200 bg-white/70 p-2 text-neutral-700 shadow-sm" aria-label="Fechar menu">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {items.map((item) => {
+                const Icon = iconMap[item.icon] || LayoutDashboard;
+                const active = item.href === "/dashboard" ? pathname === "/dashboard" : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={[
+                      "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition",
+                      active
+                        ? "bg-[linear-gradient(135deg,color-mix(in_srgb,var(--clinic-accent)_20%,white),rgba(255,255,255,0.82))] text-[var(--clinic-primary)] shadow-sm"
+                        : "text-neutral-600 hover:bg-white/75",
+                    ].join(" ")}
+                  >
+                    <Icon size={18} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
+        </div>
+      ) : null}
+    </>
   );
 }

@@ -64,7 +64,7 @@ export default async function AdminSaasPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#f7f7f4] text-neutral-950">
+    <main className="premium-shell min-h-screen text-neutral-950">
       <aside className="fixed inset-x-0 top-0 z-20 border-b border-neutral-200 bg-neutral-950 text-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
           <Link href="/admin" className="flex items-center gap-2 text-emerald-300">

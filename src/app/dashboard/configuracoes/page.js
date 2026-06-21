@@ -81,7 +81,7 @@ export default async function ConfiguracoesPage({ searchParams }) {
                       <p className="mt-1 text-sm font-semibold text-neutral-950">Exemplo do dashboard</p>
                     </div>
                   </div>
-                  {meta.logo_storage_path ? <p className="mt-3 truncate rounded-md bg-white/70 px-3 py-2 text-xs text-neutral-500">Storage: {meta.logo_storage_path}</p> : null}
+                  {meta.logo_storage_path ? <p className="mt-3 truncate rounded-md bg-white/70 px-3 py-2 text-xs text-neutral-500">Logo Armazenada: {meta.logo_storage_path}</p> : null}
                   <div className="mt-5 grid grid-cols-2 gap-3">
                     <div className="rounded-lg bg-white p-3 shadow-sm"><p className="text-xs text-neutral-500">Clientes</p><strong className="mt-1 block text-xl">128</strong></div>
                     <div className="rounded-lg p-3 text-white shadow-sm" style={{ background: "var(--clinic-primary)" }}><p className="text-xs text-white/75">Hoje</p><strong className="mt-1 block text-xl">R$ 890</strong></div>

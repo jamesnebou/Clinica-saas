@@ -58,6 +58,7 @@ export async function startSubscriptionAction(formData) {
 
   const planSlug = requireValue(text(formData, "plano"), "Plano nao informado.");
   const billingEmail = text(formData, "billing_email") || activeClinic.billing_email || activeClinic.email;
+  const billingType = text(formData, "billing_type") || "UNDEFINED";
   const plans = await getSystemPlans();
   const plan = plans.find((item) => item.slug === planSlug);
 
@@ -108,6 +109,7 @@ export async function startSubscriptionAction(formData) {
       clinic: { ...clinic, billing_email: billingEmail },
       plan,
       customerId,
+      billingType,
     });
 
     const payments = await listAsaasSubscriptionPayments(subscription.id);
@@ -132,6 +134,7 @@ export async function startSubscriptionAction(formData) {
         ...(clinic.metadata || {}),
         assinatura_ativada_em: new Date().toISOString(),
         asaas_subscription_status: subscription.status || null,
+        asaas_billing_type: billingType,
       },
     })
     .eq("id", clinic.id);

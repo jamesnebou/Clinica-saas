@@ -30,6 +30,17 @@ function Notice({ type, children }) {
   return <div className={`mt-6 flex gap-3 rounded-lg border p-4 text-sm ${styles}`}><Icon size={18} className="mt-0.5 shrink-0" /><p>{children}</p></div>;
 }
 
+function SelectField({ label, name, defaultValue = "", children }) {
+  return (
+    <label className="block">
+      <span className="text-sm font-medium text-neutral-700">{label}</span>
+      <select name={name} defaultValue={defaultValue} className="mt-2 h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none transition focus:border-[var(--clinic-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--clinic-primary)_18%,transparent)]">
+        {children}
+      </select>
+    </label>
+  );
+}
+
 async function getBillingRows(clinicaId) {
   const { data, error } = await supabaseAdmin
     .from("asaas_cobrancas")
@@ -57,6 +68,7 @@ export default async function AssinaturaPage({ searchParams }) {
   ]);
   const billingState = getClinicBillingState(activeClinic);
   const limits = getLimitRows({ plan: currentPlan, usage });
+  const openCharge = cobrancas.find((item) => ["pending", "pendente", "overdue", "vencido"].includes(String(item.status || "").toLowerCase()));
 
   return (
     <main className="px-5 py-8 sm:px-8 lg:px-10">
@@ -74,6 +86,11 @@ export default async function AssinaturaPage({ searchParams }) {
         {params?.erro === "permissao" ? <Notice>{params?.mensagem || "Seu usuario nao tem permissao para alterar a assinatura da clinica."}</Notice> : null}
         {params?.erro === "upgrade" || params?.erro === "clinica" || params?.erro === "email" ? <Notice>{params?.mensagem || "Nao foi possivel processar esta alteracao agora."}</Notice> : null}
         {params?.erro === "plano" ? <Notice>Plano nao encontrado ou inativo. Revise os planos no painel interno.</Notice> : null}
+        {openCharge ? (
+          <Notice>
+            Existe uma cobranca de {formatMoney(openCharge.valor)} com vencimento em {formatDate(openCharge.vencimento)} aguardando pagamento. Se ela vencer, o sistema pode ser marcado como inadimplente e novas operacoes podem ser bloqueadas automaticamente.
+          </Notice>
+        ) : null}
 
         <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_400px]">
           <section className="space-y-6">
@@ -145,6 +162,15 @@ export default async function AssinaturaPage({ searchParams }) {
                         <p className="mt-2 text-xs leading-5 text-neutral-600">{plan.limite_usuarios} usuarios - {plan.limite_profissionais} profissionais - {plan.limite_clientes} clientes - {plan.limite_agendamentos_mes} agendamentos/mes</p>
                       </div>
                       {plan.slug === currentPlan.slug ? <span className="rounded-full bg-white px-2 py-1 text-xs font-bold text-[var(--clinic-primary)]">Atual</span> : null}
+                    </div>
+                    <div className="mt-4">
+                      <SelectField label="Forma de cobranca" name="billing_type" defaultValue={activeClinic.metadata?.asaas_billing_type || "UNDEFINED"}>
+                        <option value="UNDEFINED">Forma de Pagamento: Pix, boleto ou cartao</option>
+                        <option value="PIX">Pix</option>
+                        <option value="BOLETO">Boleto</option>
+                        <option value="CREDIT_CARD">Cartao de credito</option>
+                      </SelectField>
+                      <p className="mt-2 text-xs leading-5 text-neutral-500">Escolha a melhor forma para o seu pagamento.</p>
                     </div>
                     <button className="mt-4 h-10 w-full rounded-lg bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800" type="submit">
                       {plan.slug === currentPlan.slug && activeClinic.status === "ativa" ? "Reativar cobranca" : "Ativar plano"}

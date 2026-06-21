@@ -51,7 +51,7 @@ export async function createAsaasCustomerForClinic(clinic) {
   });
 }
 
-export async function createAsaasSubscriptionForClinic({ clinic, plan, customerId }) {
+export async function createAsaasSubscriptionForClinic({ clinic, plan, customerId, billingType = "UNDEFINED" }) {
   const nextDueDate = new Date();
   nextDueDate.setDate(nextDueDate.getDate() + 1);
 
@@ -59,7 +59,7 @@ export async function createAsaasSubscriptionForClinic({ clinic, plan, customerI
     method: "POST",
     body: JSON.stringify({
       customer: customerId,
-      billingType: "BOLETO",
+      billingType,
       value: Number(plan.preco_mensal || 0),
       nextDueDate: nextDueDate.toISOString().slice(0, 10),
       cycle: "MONTHLY",
