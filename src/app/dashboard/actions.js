@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireClinic } from "@/lib/auth/session";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { uploadClientPhoto, uploadClinicLogo } from "@/lib/supabase/storage";
+import { uploadClientPhoto, uploadClinicLogo, uploadClinicSiteImage } from "@/lib/supabase/storage";
 import { assertClinicLimit, assertClinicOperational } from "@/lib/saas/plans";
 
 async function getScopedSupabase() {
@@ -997,11 +997,22 @@ export async function updateClinicSettingsAction(formData) {
   const dias = formData.getAll("dias_funcionamento").map((item) => String(item));
   const logoFile = formData.get("logo_file");
   let uploadedLogo = null;
+  const siteUploads = {};
 
   try {
     uploadedLogo = await uploadClinicLogo({ clinicaId, file: logoFile });
+    for (const [field, slot] of [
+      ["site_hero_image_file", "hero"],
+      ["site_profissional_image_file", "profissional"],
+      ["site_clinica_foto_1_file", "clinica-1"],
+      ["site_clinica_foto_2_file", "clinica-2"],
+      ["site_clinica_foto_3_file", "clinica-3"],
+    ]) {
+      const uploaded = await uploadClinicSiteImage({ clinicaId, file: formData.get(field), slot });
+      if (uploaded?.publicUrl) siteUploads[field] = uploaded;
+    }
   } catch (error) {
-    redirectWithMessage("/dashboard/configuracoes", "logo", error.message || "Nao foi possivel enviar a logo.");
+    redirectWithMessage("/dashboard/configuracoes", "upload", error.message || "Nao foi possivel enviar a imagem.");
   }
 
   const nextMetadata = {
@@ -1031,6 +1042,19 @@ export async function updateClinicSettingsAction(formData) {
       credencial_1: nullableText(formData, "site_credencial_1"),
       credencial_2: nullableText(formData, "site_credencial_2"),
       credencial_3: nullableText(formData, "site_credencial_3"),
+      hero_image_url: siteUploads.site_hero_image_file?.publicUrl || metadata.site_publico?.hero_image_url || "",
+      hero_image_storage_path: siteUploads.site_hero_image_file?.path || metadata.site_publico?.hero_image_storage_path || null,
+      profissional_image_url: siteUploads.site_profissional_image_file?.publicUrl || metadata.site_publico?.profissional_image_url || "",
+      profissional_image_storage_path: siteUploads.site_profissional_image_file?.path || metadata.site_publico?.profissional_image_storage_path || null,
+      clinica_foto_1: siteUploads.site_clinica_foto_1_file?.publicUrl || metadata.site_publico?.clinica_foto_1 || "",
+      clinica_foto_1_storage_path: siteUploads.site_clinica_foto_1_file?.path || metadata.site_publico?.clinica_foto_1_storage_path || null,
+      clinica_foto_2: siteUploads.site_clinica_foto_2_file?.publicUrl || metadata.site_publico?.clinica_foto_2 || "",
+      clinica_foto_2_storage_path: siteUploads.site_clinica_foto_2_file?.path || metadata.site_publico?.clinica_foto_2_storage_path || null,
+      clinica_foto_3: siteUploads.site_clinica_foto_3_file?.publicUrl || metadata.site_publico?.clinica_foto_3 || "",
+      clinica_foto_3_storage_path: siteUploads.site_clinica_foto_3_file?.path || metadata.site_publico?.clinica_foto_3_storage_path || null,
+      instagram_url: nullableText(formData, "site_instagram_url"),
+      google_maps_url: nullableText(formData, "site_google_maps_url"),
+      google_reviews_url: nullableText(formData, "site_google_reviews_url"),
     },
   };
 
