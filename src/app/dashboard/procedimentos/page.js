@@ -1,7 +1,7 @@
 ﻿import { createClient } from "@/lib/supabase/server";
 import { requireClinicSection } from "@/lib/auth/session";
 import { EmptyClinicState, EmptyState, Field, PageHeader, SubmitButton, TextArea } from "@/components/app-shell/ui";
-import { createProcedimentoAction, deleteProcedimentoAction, toggleProcedimentoAction } from "../actions";
+import { createProcedimentoAction, deleteProcedimentoAction, toggleProcedimentoAction, updateProcedimentoAction } from "../actions";
 
 export const metadata = { title: "Procedimentos | Clinica SaaS" };
 
@@ -15,7 +15,7 @@ export default async function ProcedimentosPage() {
   const supabase = await createClient();
   const { data: procedimentos = [] } = await supabase
     .from("procedimentos")
-    .select("id, nome, categoria, descricao, duracao_minutos, preco, ativo, publicado_site, destaque_site, sinal_percentual, sinal_valor, ordem_site")
+    .select("id, nome, categoria, descricao, duracao_minutos, preco, ativo, publicado_site, destaque_site, sinal_percentual, sinal_valor, ordem_site, cuidados_antes, cuidados_depois")
     .eq("clinica_id", activeClinic.id)
     .order("created_at", { ascending: false });
 
@@ -73,6 +73,9 @@ export default async function ProcedimentosPage() {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
+                      <a href={`#editar-${item.id}`} className="inline-flex h-9 items-center rounded-lg border border-neutral-200 px-3 text-sm font-semibold">
+                        Editar
+                      </a>
                       <form action={toggleProcedimentoAction}>
                         <input type="hidden" name="id" value={item.id} />
                         <input type="hidden" name="ativo" value={item.ativo ? "false" : "true"} />
@@ -86,6 +89,41 @@ export default async function ProcedimentosPage() {
                       </form>
                     </div>
                   </div>
+                  <details id={`editar-${item.id}`} className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+                    <summary className="cursor-pointer text-sm font-bold text-neutral-800">Editar procedimento</summary>
+                    <form action={updateProcedimentoAction} className="mt-4 grid gap-4">
+                      <input type="hidden" name="id" value={item.id} />
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <Field label="Nome" name="nome" defaultValue={item.nome || ""} required />
+                        <Field label="Categoria" name="categoria" defaultValue={item.categoria || ""} placeholder="Facial, corporal, injetavel..." />
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <Field label="Duração (min)" name="duracao_minutos" type="number" defaultValue={String(item.duracao_minutos || 60)} />
+                        <Field label="Preço" name="preco" type="number" defaultValue={String(item.preco || 0)} />
+                        <Field label="Ordem no site" name="ordem_site" type="number" defaultValue={String(item.ordem_site || 0)} />
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <Field label="Sinal fixo" name="sinal_valor" type="number" defaultValue={String(item.sinal_valor || 0)} />
+                        <Field label="Sinal (%)" name="sinal_percentual" type="number" defaultValue={String(item.sinal_percentual || 0)} />
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <label className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700">
+                          <input type="checkbox" name="publicado_site" defaultChecked={item.publicado_site !== false} />
+                          Publicar no site
+                        </label>
+                        <label className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700">
+                          <input type="checkbox" name="destaque_site" defaultChecked={Boolean(item.destaque_site)} />
+                          Destacar no site
+                        </label>
+                      </div>
+                      <TextArea label="Descrição" name="descricao" defaultValue={item.descricao || ""} />
+                      <TextArea label="Cuidados antes" name="cuidados_antes" defaultValue={item.cuidados_antes || ""} />
+                      <TextArea label="Cuidados depois" name="cuidados_depois" defaultValue={item.cuidados_depois || ""} />
+                      <div>
+                        <SubmitButton>Salvar alterações</SubmitButton>
+                      </div>
+                    </form>
+                  </details>
                 </article>
               ))}
             </div>

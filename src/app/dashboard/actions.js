@@ -279,6 +279,34 @@ export async function createProcedimentoAction(formData) {
   revalidatePath("/dashboard");
 }
 
+export async function updateProcedimentoAction(formData) {
+  const { supabase, clinicaId } = await getScopedSupabase();
+  const id = requireValue(text(formData, "id"), "Procedimento nao informado.");
+
+  const { error } = await supabase
+    .from("procedimentos")
+    .update({
+      nome: requireValue(text(formData, "nome"), "Informe o nome do procedimento."),
+      categoria: nullableText(formData, "categoria"),
+      descricao: nullableText(formData, "descricao"),
+      duracao_minutos: Math.max(1, numberValue(formData, "duracao_minutos", 60)),
+      preco: numberValue(formData, "preco", 0),
+      sinal_percentual: Math.min(100, Math.max(0, numberValue(formData, "sinal_percentual", 0))),
+      sinal_valor: Math.max(0, numberValue(formData, "sinal_valor", 0)),
+      publicado_site: formData.get("publicado_site") === "on",
+      destaque_site: formData.get("destaque_site") === "on",
+      ordem_site: Math.max(0, numberValue(formData, "ordem_site", 0)),
+      cuidados_antes: nullableText(formData, "cuidados_antes"),
+      cuidados_depois: nullableText(formData, "cuidados_depois"),
+    })
+    .eq("id", id)
+    .eq("clinica_id", clinicaId);
+
+  if (error) throw error;
+  revalidatePath("/dashboard/procedimentos");
+  revalidatePath("/dashboard");
+}
+
 export async function toggleProcedimentoAction(formData) {
   const { supabase, clinicaId } = await getScopedSupabase();
   const id = requireValue(text(formData, "id"), "Procedimento nao informado.");

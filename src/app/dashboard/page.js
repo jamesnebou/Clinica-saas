@@ -76,7 +76,7 @@ export default async function DashboardPage({ searchParams }) {
   const chartStart = days[0].start;
   const chartEnd = days[days.length - 1].end;
 
-  const [clientes, profissionais, procedimentos, agendamentos, hojeResult, periodoResult, proximosResult] = await Promise.all([
+  const [clientes, profissionais, procedimentos, agendamentos, hojeResult, periodoResult, proximosResult, siteBookingsResult] = await Promise.all([
     countRows(supabase, "clientes", activeClinic.id),
     countRows(supabase, "profissionais", activeClinic.id),
     countRows(supabase, "procedimentos", activeClinic.id),
@@ -84,11 +84,14 @@ export default async function DashboardPage({ searchParams }) {
     supabase.from("agendamentos").select("id, valor, valor_pago, status").eq("clinica_id", activeClinic.id).gte("inicio", dayStart).lt("inicio", dayEnd),
     supabase.from("agendamentos").select("id, inicio, valor, valor_pago, pagamento_status, status").eq("clinica_id", activeClinic.id).gte("inicio", chartStart).lt("inicio", chartEnd),
     supabase.from("agendamentos").select("id, inicio, status, valor, clientes(nome), profissionais(nome), procedimentos(nome)").eq("clinica_id", activeClinic.id).gte("inicio", new Date().toISOString()).order("inicio", { ascending: true }).limit(5),
+    supabase.from("site_agendamentos_publicos").select("id, nome, telefone, data_hora, valor_sinal, pagamento_status, invoice_url").eq("clinica_id", activeClinic.id).gte("created_at", chartStart).order("created_at", { ascending: false }).limit(8),
   ]);
 
   const hoje = hojeResult.data || [];
   const periodo = periodoResult.data || [];
   const proximos = proximosResult.data || [];
+  const siteBookings = siteBookingsResult.data || [];
+  const pendingSiteBookings = siteBookings.filter((item) => ["pendente", "erro"].includes(item.pagamento_status));
 
   const dayMap = new Map(days.map((item) => [item.key, item]));
   for (const item of periodo) {
@@ -135,6 +138,23 @@ export default async function DashboardPage({ searchParams }) {
         {params?.erro === "permissao" ? (
           <div className="mt-6">
             <Notice type="warning" title="Acesso restrito">Seu papel atual nao tem permissao para abrir essa area. O menu mostra apenas os modulos liberados para o seu acesso.</Notice>
+          </div>
+        ) : null}
+
+        {siteBookings.length ? (
+          <div className="mt-6">
+            <Notice type={pendingSiteBookings.length ? "warning" : "success"} title="Agendamentos pelo site">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <p>
+                  {siteBookings.length} solicitação(ões) pelo site nos últimos 7 dias.
+                  {pendingSiteBookings.length ? ` ${pendingSiteBookings.length} ainda com sinal pendente.` : " Nenhum sinal pendente no período."}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Link href="/dashboard/agenda" className="inline-flex h-9 items-center rounded-lg bg-neutral-950 px-3 text-xs font-bold text-white">Abrir agenda</Link>
+                  <Link href="/dashboard/financeiro" className="inline-flex h-9 items-center rounded-lg border border-neutral-200 bg-white px-3 text-xs font-bold text-neutral-900">Ver financeiro</Link>
+                </div>
+              </div>
+            </Notice>
           </div>
         ) : null}
 

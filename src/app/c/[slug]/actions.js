@@ -25,7 +25,8 @@ function minutesFromTime(value) {
 }
 
 function publicRedirect(slug, params) {
-  redirect(`/c/${slug}?${new URLSearchParams(params).toString()}`);
+  const query = new URLSearchParams(params).toString();
+  redirect(`/c/${slug}${query ? `?${query}` : ""}#agendar`);
 }
 
 function calculateDeposit(procedimento) {
@@ -77,7 +78,7 @@ async function assertSlotAvailable({ clinicId, profissionalId, startISO, endISO,
 export async function createPublicBookingAction(formData) {
   const slug = text(formData, "slug");
   const procedimentoId = text(formData, "procedimento_id");
-  const profissionalId = nullableText(formData, "profissional_id");
+  const profissionalId = nullableText(formData, "profissional_id") || nullableText(formData, "profissional_disponivel_id");
   const nome = text(formData, "nome");
   const telefone = nullableText(formData, "telefone");
   const email = nullableText(formData, "email");
@@ -128,6 +129,10 @@ export async function createPublicBookingAction(formData) {
   const end = new Date(start.getTime() + Number(procedimento.duracao_minutos || 60) * 60000);
   assertWorkingHours({ clinic, start, end, slug });
 
+  if (!profissionalId) {
+    publicRedirect(slug, { erro: "agenda", mensagem: "Escolha um horario disponivel para concluir o agendamento." });
+  }
+
   await assertSlotAvailable({
     clinicId: clinic.id,
     profissionalId,
@@ -174,6 +179,10 @@ export async function createPublicBookingAction(formData) {
   const valorSinal = calculateDeposit(procedimento);
   const pagamentoStatus = valorSinal > 0 ? "pendente" : "sem_sinal";
 
+  if (valorSinal > 0 && !isAsaasConfigured()) {
+    publicRedirect(slug, { erro: "pagamento", mensagem: "Checkout online indisponivel no momento. A clinica precisa configurar o Asaas para receber o sinal pelo site." });
+  }
+
   const { data: agendamento, error: agendaError } = await supabaseAdmin
     .from("agendamentos")
     .insert({
@@ -194,36 +203,27 @@ export async function createPublicBookingAction(formData) {
 
   if (agendaError) throw agendaError;
 
-  await supabaseAdmin.from("crm_oportunidades").insert({
-    clinica_id: clinic.id,
-    cliente_id: clienteId,
-    nome,
-    telefone,
-    email,
-    origem: "site",
-    status: "avaliacao_marcada",
-    valor_estimado: valorTotal,
-    proxima_acao_em: start.toISOString(),
-    proxima_acao: `Atendimento agendado: ${procedimento.nome}`,
-    observacoes: "Criado automaticamente pelo site publico.",
-  });
-
   let invoiceUrl = null;
   let asaasPaymentId = null;
   let paymentPayload = {};
 
   if (valorSinal > 0 && isAsaasConfigured()) {
-    const customer = await createAsaasCustomerForPatient({ clinicId: clinic.id, nome, email, telefone, cpf });
-    const payment = await createAsaasPaymentForBooking({
-      customerId: customer.id,
-      value: valorSinal,
-      description: `Sinal ${procedimento.nome} - ${clinic.nome}`,
-      externalReference: agendamento.id,
-      billingType: "UNDEFINED",
-    });
-    invoiceUrl = payment.invoiceUrl || payment.bankSlipUrl || null;
-    asaasPaymentId = payment.id || null;
-    paymentPayload = payment || {};
+    try {
+      const customer = await createAsaasCustomerForPatient({ clinicId: clinic.id, nome, email, telefone, cpf });
+      const payment = await createAsaasPaymentForBooking({
+        customerId: customer.id,
+        value: valorSinal,
+        description: `Sinal ${procedimento.nome} - ${clinic.nome}`,
+        externalReference: agendamento.id,
+        billingType: "UNDEFINED",
+      });
+      invoiceUrl = payment.invoiceUrl || payment.bankSlipUrl || null;
+      asaasPaymentId = payment.id || null;
+      paymentPayload = payment || {};
+    } catch (error) {
+      await supabaseAdmin.from("agendamentos").delete().eq("id", agendamento.id).eq("clinica_id", clinic.id);
+      publicRedirect(slug, { erro: "pagamento", mensagem: error.message || "Nao foi possivel gerar o checkout do sinal. Tente novamente." });
+    }
   }
 
   const { error: publicError } = await supabaseAdmin.from("site_agendamentos_publicos").insert({
@@ -246,11 +246,27 @@ export async function createPublicBookingAction(formData) {
 
   if (publicError) throw publicError;
 
+  await supabaseAdmin.from("crm_oportunidades").insert({
+    clinica_id: clinic.id,
+    cliente_id: clienteId,
+    nome,
+    telefone,
+    email,
+    origem: "site",
+    status: "avaliacao_marcada",
+    valor_estimado: valorTotal,
+    proxima_acao_em: start.toISOString(),
+    proxima_acao: `Atendimento agendado: ${procedimento.nome}`,
+    observacoes: asaasPaymentId ? "Criado automaticamente pelo site publico com checkout de sinal." : "Criado automaticamente pelo site publico.",
+  });
+
   revalidatePath(`/c/${slug}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
 
   if (invoiceUrl) {
     redirect(invoiceUrl);
   }
 
-  publicRedirect(slug, { ok: "agendamento", mensagem: valorSinal > 0 ? "Agendamento criado. A clinica enviara o link de pagamento do sinal." : "Agendamento solicitado com sucesso." });
+  publicRedirect(slug, { ok: "agendamento", mensagem: "Agendamento solicitado com sucesso." });
 }

@@ -1,7 +1,7 @@
 import { Camera, CheckCircle2, Clock, CreditCard, MapPin, MessageCircle, Quote, ShieldCheck, Sparkles, Star } from "lucide-react";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { createPublicBookingAction } from "./actions";
+import { PublicBookingForm } from "./booking-form";
 
 export const dynamic = "force-dynamic";
 
@@ -28,13 +28,6 @@ function serviceLabel(procedimento) {
   return `Sinal de ${money(signal)} no checkout`;
 }
 
-function nextSuggestedDate() {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  date.setHours(10, 0, 0, 0);
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
-
 function googleEmbedUrl(clinic, site) {
   const mapsUrl = String(site.google_maps_url || "").trim();
   if (/^https:\/\/www\.google\.com\/maps\/embed/i.test(mapsUrl)) return mapsUrl;
@@ -49,12 +42,14 @@ function fallbackImage(label, dark = false) {
   return `https://placehold.co/1200x1500/${bg}/${fg}?text=${encodeURIComponent(label)}`;
 }
 
-function SectionHeading({ eyebrow, title, description, center = false }) {
+function SectionHeading({ eyebrow, title, description, center = false, tone = "light" }) {
+  const dark = tone === "dark";
+
   return (
     <div className={center ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
-      <p className="text-xs font-bold uppercase tracking-[0.32em] text-[var(--clinic-primary)]">{eyebrow}</p>
-      <h2 className="mt-3 text-4xl font-semibold tracking-tight text-[#181510] sm:text-5xl">{title}</h2>
-      {description ? <p className="mt-4 text-base leading-8 text-neutral-600">{description}</p> : null}
+      <p className={`text-xs font-bold uppercase tracking-[0.32em] ${dark ? "text-[var(--clinic-accent)]" : "text-[var(--clinic-primary)]"}`}>{eyebrow}</p>
+      <h2 className={`mt-3 text-4xl font-semibold tracking-tight sm:text-5xl ${dark ? "text-white" : "text-[#181510]"}`}>{title}</h2>
+      {description ? <p className={`mt-4 text-base leading-8 ${dark ? "text-white/68" : "text-neutral-600"}`}>{description}</p> : null}
     </div>
   );
 }
@@ -112,7 +107,6 @@ export default async function PublicClinicPage({ params, searchParams }) {
   const logoUrl = meta.logo_url || "";
   const whatsapp = String(clinic.telefone || "").replace(/\D/g, "");
   const schedule = meta.horario_funcionamento || {};
-  const defaultProcedure = procedimentos[0];
   const professionalName = site.nome_profissional || profissionais[0]?.nome || brandName;
   const professionalBio = site.bio_profissional || profissionais[0]?.observacoes || "Atendimento cuidadoso, escuta ativa e plano de tratamento alinhado ao seu objetivo estetico.";
   const heroImage = site.hero_image_url || site.profissional_image_url || fallbackImage(brandName, true);
@@ -132,7 +126,7 @@ export default async function PublicClinicPage({ params, searchParams }) {
 
   return (
     <main
-      className="min-h-screen overflow-hidden text-[#17130f]"
+      className="public-site-shell min-h-screen overflow-hidden text-[#17130f]"
       style={{
         "--clinic-primary": primaryColor,
         "--clinic-accent": accentColor,
@@ -187,7 +181,7 @@ export default async function PublicClinicPage({ params, searchParams }) {
         </div>
       </section>
 
-      <section id="sobre" className="mx-auto grid max-w-7xl gap-14 px-5 py-24 sm:px-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+      <section id="sobre" className="public-section-soft mx-auto grid max-w-7xl gap-14 px-5 py-24 sm:px-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div className="relative">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={professionalImage} alt={professionalName} className="aspect-[4/5] w-full rounded-[2rem] object-cover shadow-[0_30px_86px_rgba(23,19,15,0.18)]" />
@@ -205,7 +199,7 @@ export default async function PublicClinicPage({ params, searchParams }) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 pb-24 sm:px-8">
+      <section className="public-section-warm mx-auto max-w-7xl px-5 py-24 sm:px-8">
         <SectionHeading eyebrow="A clinica" title="Ambiente pensado para acolher, cuidar e transformar" description="Mostre ao paciente onde ele sera atendido. Fotos reais aumentam confianca e elevam a percepcao de valor antes do agendamento." center />
         <div className="mt-10 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -219,26 +213,29 @@ export default async function PublicClinicPage({ params, searchParams }) {
         </div>
       </section>
 
-      <section id="servicos" className="py-24">
-        <SectionHeading eyebrow="Nossos servicos" title="Protocolos em destaque" description="Passe pelos tratamentos e escolha o melhor ponto de partida para sua avaliacao." center />
-        <div className="mt-12 overflow-hidden">
+      <section id="servicos" className="public-services-section relative overflow-hidden py-24 text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_0%,color-mix(in_srgb,var(--clinic-accent)_22%,transparent),transparent_32rem),radial-gradient(circle_at_85%_18%,color-mix(in_srgb,var(--clinic-primary)_24%,transparent),transparent_30rem)]" />
+        <div className="relative z-10">
+          <SectionHeading eyebrow="Nossos servicos" title="Protocolos em destaque" description="Passe pelos tratamentos e escolha o melhor ponto de partida para sua avaliacao." center tone="dark" />
+        </div>
+        <div className="relative z-10 mt-12 overflow-hidden">
           <div className="public-services-track flex w-max gap-5 px-5 sm:px-8">
             {servicesLoop.map((item, index) => (
-              <article key={`${item.id}-${index}`} className="public-service-card w-[330px] shrink-0 rounded-[1.75rem] border border-white/70 bg-white/72 p-6 backdrop-blur md:w-[390px]">
+              <article key={`${item.id}-${index}`} className="public-service-card public-service-card-dark w-[330px] shrink-0 rounded-[1.75rem] border border-white/10 bg-white/[0.075] p-6 text-white backdrop-blur-2xl md:w-[390px]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--clinic-primary)]">{item.categoria || "Procedimento"}</p>
-                    <h3 className="mt-3 text-2xl font-semibold">{item.nome}</h3>
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--clinic-accent)]">{item.categoria || "Procedimento"}</p>
+                    <h3 className="mt-3 text-2xl font-semibold text-white">{item.nome}</h3>
                   </div>
-                  <span className="rounded-full bg-[color-mix(in_srgb,var(--clinic-accent)_18%,white)] px-3 py-1 text-xs font-bold text-[var(--clinic-primary)]">{item.duracao_minutos} min</span>
+                  <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-bold text-white/78">{item.duracao_minutos} min</span>
                 </div>
-                <p className="mt-5 min-h-24 text-sm leading-7 text-neutral-600">{item.descricao || "Procedimento com avaliacao profissional e orientacoes personalizadas."}</p>
-                <div className="mt-7 flex items-end justify-between gap-4 border-t border-neutral-200 pt-5">
+                <p className="mt-5 min-h-24 text-sm leading-7 text-white/62">{item.descricao || "Procedimento com avaliacao profissional e orientacoes personalizadas."}</p>
+                <div className="mt-7 flex items-end justify-between gap-4 border-t border-white/10 pt-5">
                   <div>
-                    <p className="text-xs text-neutral-500">Valor</p>
-                    <strong className="text-2xl">{money(item.preco)}</strong>
+                    <p className="text-xs text-white/42">Valor</p>
+                    <strong className="text-2xl text-white">{money(item.preco)}</strong>
                   </div>
-                  <p className="max-w-36 text-right text-xs font-semibold text-neutral-500">{serviceLabel(item)}</p>
+                  <p className="max-w-36 text-right text-xs font-semibold text-white/50">{serviceLabel(item)}</p>
                 </div>
               </article>
             ))}
@@ -246,7 +243,7 @@ export default async function PublicClinicPage({ params, searchParams }) {
         </div>
       </section>
 
-      <section id="depoimentos" className="mx-auto max-w-7xl px-5 py-24 sm:px-8">
+      <section id="depoimentos" className="public-section-soft mx-auto max-w-7xl px-5 py-24 sm:px-8">
         <SectionHeading eyebrow="Depoimentos" title="O que pacientes dizem" description="A satisfacao dos pacientes e o maior reconhecimento." center />
         {site.google_reviews_url ? (
           <div className="mt-6 text-center">
@@ -272,7 +269,7 @@ export default async function PublicClinicPage({ params, searchParams }) {
         </div>
       </section>
 
-      <section id="agendar" className="mx-auto grid max-w-7xl gap-8 px-5 py-24 sm:px-8 lg:grid-cols-[0.9fr_1.1fr]">
+      <section id="agendar" className="public-section-warm mx-auto grid max-w-7xl gap-8 px-5 py-24 sm:px-8 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[1.75rem] border border-white/70 bg-white/72 p-7 shadow-[0_20px_54px_rgba(20,18,15,0.09)] backdrop-blur">
           <SectionHeading eyebrow="Agendamento" title="Reserve seu horario" description="Escolha procedimento, profissional e horario. A disponibilidade e validada com a agenda real da clinica." />
           <div className="mt-8 space-y-4 text-sm text-neutral-700">
@@ -283,54 +280,10 @@ export default async function PublicClinicPage({ params, searchParams }) {
           </div>
         </div>
 
-        <form action={createPublicBookingAction} className="rounded-[1.75rem] border border-white/70 bg-[#15120f] p-7 text-white shadow-[0_32px_90px_rgba(20,18,15,0.26)]">
-          <input type="hidden" name="slug" value={clinic.slug} />
-          {query?.erro ? <div className="mb-5 rounded-2xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">{query.mensagem || "Nao foi possivel concluir o agendamento."}</div> : null}
-          {query?.ok ? <div className="mb-5 rounded-2xl border border-emerald-300/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">{query.mensagem || "Agendamento solicitado com sucesso."}</div> : null}
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="block md:col-span-2">
-              <span className="text-sm font-semibold text-white/75">Procedimento</span>
-              <select name="procedimento_id" defaultValue={defaultProcedure?.id || ""} required className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-sm text-white outline-none">
-                {procedimentos.map((item) => <option key={item.id} value={item.id} className="text-neutral-950">{item.nome} - {money(item.preco)} - {serviceLabel(item)}</option>)}
-              </select>
-            </label>
-            <label className="block">
-              <span className="text-sm font-semibold text-white/75">Profissional</span>
-              <select name="profissional_id" className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-sm text-white outline-none">
-                <option value="" className="text-neutral-950">Primeiro disponivel</option>
-                {profissionais.map((item) => <option key={item.id} value={item.id} className="text-neutral-950">{item.nome}</option>)}
-              </select>
-            </label>
-            <label className="block">
-              <span className="text-sm font-semibold text-white/75">Data e horario</span>
-              <input name="data_hora" type="datetime-local" min={nextSuggestedDate().slice(0, 10)} defaultValue={nextSuggestedDate()} required className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-sm text-white outline-none" />
-            </label>
-            <label className="block">
-              <span className="text-sm font-semibold text-white/75">Nome</span>
-              <input name="nome" required className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-sm text-white outline-none" />
-            </label>
-            <label className="block">
-              <span className="text-sm font-semibold text-white/75">WhatsApp</span>
-              <input name="telefone" required className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-sm text-white outline-none" />
-            </label>
-            <label className="block">
-              <span className="text-sm font-semibold text-white/75">E-mail</span>
-              <input name="email" type="email" className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-sm text-white outline-none" />
-            </label>
-            <label className="block">
-              <span className="text-sm font-semibold text-white/75">CPF</span>
-              <input name="cpf" className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-white/10 px-4 text-sm text-white outline-none" />
-            </label>
-          </div>
-          <label className="mt-5 flex items-start gap-3 text-sm text-white/70">
-            <input type="checkbox" name="consentimento_lgpd" required className="mt-1" />
-            Aceito que meus dados sejam usados para contato, agendamento e atendimento, conforme politica de privacidade da clinica.
-          </label>
-          <button type="submit" className="mt-6 w-full rounded-full bg-[var(--clinic-accent)] px-6 py-4 text-sm font-bold text-[#15120f] shadow-[0_18px_44px_color-mix(in_srgb,var(--clinic-accent)_26%,transparent)]">Confirmar agendamento</button>
-        </form>
+        <PublicBookingForm slug={clinic.slug} procedimentos={procedimentos} profissionais={profissionais} query={query} />
       </section>
 
-      <section id="localizacao" className="mx-auto grid max-w-7xl gap-8 px-5 py-24 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+      <section id="localizacao" className="public-section-soft mx-auto grid max-w-7xl gap-8 px-5 py-24 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
         <div className="rounded-[2rem] border border-white/70 bg-white/72 p-7 shadow-[0_20px_54px_rgba(20,18,15,0.08)] backdrop-blur">
           <SectionHeading eyebrow="Localizacao" title="Como chegar" description="Use o mapa para chegar ate a clinica ou fale com a equipe pelo WhatsApp antes do atendimento." />
           <div className="mt-8 space-y-4 text-sm leading-7 text-neutral-700">
