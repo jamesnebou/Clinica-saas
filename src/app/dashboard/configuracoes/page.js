@@ -69,7 +69,7 @@ export default async function ConfiguracoesPage({ searchParams }) {
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Nome da marca" name="brand_name" defaultValue={meta.brand_name || activeClinic.nome || ""} />
                 <label className="block">
-                  <span className="text-sm font-medium text-neutral-700">Logo da clinica</span>
+                  <span className="text-sm font-medium text-neutral-700">Logo da clínica</span>
                   <input name="logo_file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[var(--clinic-primary)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white focus:border-[var(--clinic-primary)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--clinic-primary)_18%,transparent)]" />
                   <span className="mt-2 block text-xs leading-5 text-neutral-500">PNG, JPG, WEBP ou SVG. Limite de 30 MB. Ao enviar, a logo atual sera substituida.</span>
                 </label>
@@ -123,26 +123,31 @@ export default async function ConfiguracoesPage({ searchParams }) {
                 <span className="text-sm font-medium text-neutral-700">Foto principal do site</span>
                 <input name="site_hero_image_file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[var(--clinic-primary)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white" />
                 <span className="mt-2 block text-xs leading-5 text-neutral-500">Hero/capa. Recomendado: 1920x1200 px ou maior, horizontal. Limite 50 MB.</span>
+                {site.hero_image_url ? <span className="mt-2 block text-xs font-semibold text-[var(--clinic-primary)]">Imagem salva.</span> : null}
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-neutral-700">Foto da profissional</span>
                 <input name="site_profissional_image_file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[var(--clinic-primary)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white" />
                 <span className="mt-2 block text-xs leading-5 text-neutral-500">Sobre/profissional. Recomendado: 1200x1500 px, vertical. Limite 50 MB.</span>
+                {site.profissional_image_url ? <span className="mt-2 block text-xs font-semibold text-[var(--clinic-primary)]">Imagem salva.</span> : null}
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-neutral-700">Foto da clinica 1</span>
                 <input name="site_clinica_foto_1_file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[var(--clinic-primary)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white" />
                 <span className="mt-2 block text-xs leading-5 text-neutral-500">Galeria principal. Recomendado: 1600x1000 px, horizontal. Limite 50 MB.</span>
+                {site.clinica_foto_1 ? <span className="mt-2 block text-xs font-semibold text-[var(--clinic-primary)]">Imagem salva.</span> : null}
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-neutral-700">Foto da clinica 2</span>
                 <input name="site_clinica_foto_2_file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[var(--clinic-primary)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white" />
                 <span className="mt-2 block text-xs leading-5 text-neutral-500">Galeria lateral. Recomendado: 1200x800 px. Limite 50 MB.</span>
+                {site.clinica_foto_2 ? <span className="mt-2 block text-xs font-semibold text-[var(--clinic-primary)]">Imagem salva.</span> : null}
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-neutral-700">Foto da clinica 3</span>
                 <input name="site_clinica_foto_3_file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[var(--clinic-primary)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white" />
                 <span className="mt-2 block text-xs leading-5 text-neutral-500">Detalhe/ambiente. Recomendado: 1200x800 px. Limite 50 MB.</span>
+                {site.clinica_foto_3 ? <span className="mt-2 block text-xs font-semibold text-[var(--clinic-primary)]">Imagem salva.</span> : null}
               </label>
               <Field label="Instagram URL" name="site_instagram_url" defaultValue={site.instagram_url || ""} placeholder="https://instagram.com/..." />
               <Field label="Google Maps URL" name="site_google_maps_url" defaultValue={site.google_maps_url || ""} placeholder="https://maps.google.com/..." />

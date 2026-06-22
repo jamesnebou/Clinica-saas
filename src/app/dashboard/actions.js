@@ -990,7 +990,7 @@ export async function convertCrmOpportunityAction(formData) {
 }
 
 export async function updateClinicSettingsAction(formData) {
-  const { supabase, clinicaId, activeClinic, memberships } = await getScopedSupabase();
+  const { clinicaId, activeClinic, memberships } = await getScopedSupabase();
   requireClinicManager(memberships, clinicaId, "/dashboard/configuracoes");
 
   const metadata = activeClinic.metadata || {};
@@ -1060,7 +1060,7 @@ export async function updateClinicSettingsAction(formData) {
 
   const dominio = nullableText(formData, "site_dominio");
 
-  const { error } = await supabase
+  const { data: updatedClinic, error } = await supabaseAdmin
     .from("clinicas")
     .update({
       nome: requireValue(text(formData, "nome"), "Informe o nome da clinica."),
@@ -1072,13 +1072,18 @@ export async function updateClinicSettingsAction(formData) {
       estado: nullableText(formData, "estado"),
       metadata: nextMetadata,
     })
-    .eq("id", clinicaId);
+    .eq("id", clinicaId)
+    .select("id")
+    .maybeSingle();
 
   if (error) throw error;
+  if (!updatedClinic?.id) {
+    redirectWithMessage("/dashboard/configuracoes", "salvar", "As configuracoes nao foram gravadas. Tente novamente.");
+  }
 
   if (dominio) {
     const normalizedDomain = dominio.replace(/^https?:\/\//i, "").replace(/\/.*$/, "").toLowerCase();
-    const { error: domainError } = await supabase.from("clinica_dominios").upsert({
+    const { error: domainError } = await supabaseAdmin.from("clinica_dominios").upsert({
       clinica_id: clinicaId,
       dominio: normalizedDomain,
       status: "pendente",
