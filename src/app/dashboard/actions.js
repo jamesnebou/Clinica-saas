@@ -7,7 +7,7 @@ import { requireClinic } from "@/lib/auth/session";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { uploadClientPhoto, uploadClinicLogo, uploadClinicSiteImage } from "@/lib/supabase/storage";
 import { assertClinicLimit, assertClinicOperational } from "@/lib/saas/plans";
-import { addVercelProjectDomain, normalizeCustomDomain } from "@/lib/vercel/domains";
+import { ensureVercelProjectDomain, getVercelProjectDomain, normalizeCustomDomain, removeVercelProjectDomain } from "@/lib/vercel/domains";
 import { sendWhatsAppIntegrationTest } from "@/lib/notifications/booking";
 
 async function getScopedSupabase() {
@@ -62,6 +62,19 @@ function currentMembership(memberships, clinicaId) {
 function redirectWithMessage(path, code, message) {
   const params = new URLSearchParams({ erro: code, mensagem: message });
   redirect(`${path}?${params.toString()}`);
+}
+
+function vercelDomainObservacoes(vercelDomain) {
+  return JSON.stringify({
+    provider: "vercel",
+    configured: Boolean(vercelDomain.configured),
+    ok: Boolean(vercelDomain.ok),
+    missing: Boolean(vercelDomain.missing),
+    verified: Boolean(vercelDomain.verified),
+    message: vercelDomain.message || null,
+    verification: vercelDomain.payload?.verification || null,
+    updated_at: new Date().toISOString(),
+  });
 }
 
 function requireClinicManager(memberships, clinicaId, redirectTo) {
@@ -1085,6 +1098,58 @@ export async function updateClinicAccountAction(formData) {
   redirect("/dashboard/configuracoes?ok=conta");
 }
 
+export async function syncClinicDomainAction(formData) {
+  const { clinicaId, memberships } = await getScopedSupabase();
+  requireClinicManager(memberships, clinicaId, "/dashboard/configuracoes");
+  const domain = normalizeCustomDomain(requireValue(text(formData, "dominio"), "Dominio nao informado."));
+
+  const { data: existingDomain, error: existingDomainError } = await supabaseAdmin
+    .from("clinica_dominios")
+    .select("id, clinica_id")
+    .eq("dominio", domain)
+    .maybeSingle();
+
+  if (existingDomainError) throw existingDomainError;
+
+  if (!existingDomain || existingDomain.clinica_id !== clinicaId) {
+    redirectWithMessage("/dashboard/configuracoes", "dominio", "Dominio nao encontrado nesta clinica.");
+  }
+
+  const vercelDomain = await getVercelProjectDomain(domain);
+  const now = new Date().toISOString();
+  const { error } = await supabaseAdmin
+    .from("clinica_dominios")
+    .update({
+      status: vercelDomain.status || "pendente",
+      verificado_em: vercelDomain.status === "ativo" ? now : null,
+      observacoes: vercelDomainObservacoes(vercelDomain),
+    })
+    .eq("id", existingDomain.id)
+    .eq("clinica_id", clinicaId);
+
+  if (error) throw error;
+  revalidatePath("/dashboard/configuracoes");
+  redirect("/dashboard/configuracoes?ok=configuracoes");
+}
+
+export async function removeClinicDomainAction(formData) {
+  const { clinicaId, memberships } = await getScopedSupabase();
+  requireClinicManager(memberships, clinicaId, "/dashboard/configuracoes");
+  const domain = normalizeCustomDomain(requireValue(text(formData, "dominio"), "Dominio nao informado."));
+
+  await removeVercelProjectDomain(domain);
+
+  const { error } = await supabaseAdmin
+    .from("clinica_dominios")
+    .delete()
+    .eq("clinica_id", clinicaId)
+    .eq("dominio", domain);
+
+  if (error) throw error;
+  revalidatePath("/dashboard/configuracoes");
+  redirect("/dashboard/configuracoes?ok=configuracoes");
+}
+
 export async function updateClinicSettingsAction(formData) {
   const { clinicaId, activeClinic, memberships } = await getScopedSupabase();
   requireClinicManager(memberships, clinicaId, "/dashboard/configuracoes");
@@ -1228,16 +1293,9 @@ export async function updateClinicSettingsAction(formData) {
       redirectWithMessage("/dashboard/configuracoes", "dominio", "Este dominio ja esta vinculado a outra clinica.");
     }
 
-    if (existingDomain?.clinica_id === clinicaId) {
-      revalidatePath("/dashboard");
-      revalidatePath("/dashboard/configuracoes");
-      revalidatePath(`/c/${activeClinic.slug}`);
-      redirect("/dashboard/configuracoes?ok=configuracoes");
-    }
-
     let vercelDomain;
     try {
-      vercelDomain = await addVercelProjectDomain(normalizedDomain);
+      vercelDomain = await ensureVercelProjectDomain(normalizedDomain);
     } catch (error) {
       vercelDomain = {
         configured: true,
@@ -1253,15 +1311,7 @@ export async function updateClinicSettingsAction(formData) {
       dominio: normalizedDomain,
       status: vercelDomain.status || "pendente",
       verificado_em: vercelDomain.status === "ativo" ? now : null,
-      observacoes: JSON.stringify({
-        provider: "vercel",
-        configured: Boolean(vercelDomain.configured),
-        ok: Boolean(vercelDomain.ok),
-        verified: Boolean(vercelDomain.verified),
-        message: vercelDomain.message || null,
-        verification: vercelDomain.payload?.verification || null,
-        updated_at: now,
-      }),
+      observacoes: vercelDomainObservacoes(vercelDomain),
     }, { onConflict: "dominio" });
 
     if (domainError) throw domainError;

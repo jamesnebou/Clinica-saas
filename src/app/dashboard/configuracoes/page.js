@@ -1,7 +1,7 @@
 ﻿import { Clock, CreditCard, Mail, MessageCircle, Palette, Settings } from "lucide-react";
 import { requireClinicSection } from "@/lib/auth/session";
 import { EmptyClinicState, Field, PageHeader, SubmitButton, TextArea } from "@/components/app-shell/ui";
-import { testClinicWhatsappIntegrationAction, updateClinicAccountAction, updateClinicSettingsAction } from "../actions";
+import { removeClinicDomainAction, syncClinicDomainAction, testClinicWhatsappIntegrationAction, updateClinicAccountAction, updateClinicSettingsAction } from "../actions";
 import { ConfigTabs } from "./config-tabs";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -67,6 +67,28 @@ function DomainStatusCard({ domain }) {
           ))}
         </div>
       ) : null}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="submit"
+          name="dominio"
+          value={domain.dominio}
+          formAction={syncClinicDomainAction}
+          formNoValidate
+          className="h-9 rounded-lg border border-neutral-200 bg-white px-3 text-xs font-bold text-neutral-700 shadow-sm transition hover:border-[var(--clinic-primary)] hover:text-[var(--clinic-primary)]"
+        >
+          Sincronizar Vercel
+        </button>
+        <button
+          type="submit"
+          name="dominio"
+          value={domain.dominio}
+          formAction={removeClinicDomainAction}
+          formNoValidate
+          className="h-9 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-bold text-red-700 shadow-sm transition hover:bg-red-100"
+        >
+          Remover vinculo
+        </button>
+      </div>
     </div>
   );
 }
