@@ -50,7 +50,7 @@ function statusLabel(status) {
     agendado: "Agendado",
     confirmado: "Confirmado",
     em_atendimento: "Em atendimento",
-    concluido: "Concluido",
+    concluido: "Concluído",
     faltou: "Faltou",
     cancelado: "Cancelado",
   };
@@ -92,26 +92,31 @@ export default async function DashboardPage({ searchParams }) {
   const proximos = proximosResult.data || [];
   const siteBookings = siteBookingsResult.data || [];
   const pendingSiteBookings = siteBookings.filter((item) => ["pendente", "erro"].includes(item.pagamento_status));
+  const isFaturavel = (item) => !["cancelado", "faltou"].includes(item.status);
+  const hojeFaturavel = hoje.filter(isFaturavel);
+  const periodoFaturavel = período.filter(isFaturavel);
 
   const dayMap = new Map(days.map((item) => [item.key, item]));
   for (const item of periodo) {
     const key = new Date(item.inicio).toISOString().slice(0, 10);
     const row = dayMap.get(key);
     if (!row) continue;
-    row.previsto += Number(item.valor || 0);
-    row.recebido += Number(item.valor_pago || 0);
+    if (isFaturavel(item)) {
+      row.previsto += Number(item.valor || 0);
+      row.recebido += Number(item.valor_pago || 0);
+    }
     row.atendimentos += 1;
   }
 
   const maxChart = Math.max(1, ...days.map((item) => Math.max(item.previsto, item.recebido)));
-  const faturamentoHoje = hoje.reduce((acc, item) => acc + Number(item.valor || 0), 0);
-  const recebidoHoje = hoje.reduce((acc, item) => acc + Number(item.valor_pago || 0), 0);
+  const faturamentoHoje = hojeFaturavel.reduce((acc, item) => acc + Number(item.valor || 0), 0);
+  const recebidoHoje = hojeFaturavel.reduce((acc, item) => acc + Number(item.valor_pago || 0), 0);
   const pendenteHoje = Math.max(0, faturamentoHoje - recebidoHoje);
   const faltasHoje = hoje.filter((item) => item.status === "faltou").length;
-  const recebidoPeriodo = periodo.reduce((acc, item) => acc + Number(item.valor_pago || 0), 0);
-  const previstoPeriodo = periodo.reduce((acc, item) => acc + Number(item.valor || 0), 0);
+  const recebidoPeriodo = periodoFaturavel.reduce((acc, item) => acc + Number(item.valor_pago || 0), 0);
+  const previstoPeriodo = periodoFaturavel.reduce((acc, item) => acc + Number(item.valor || 0), 0);
   const pendentePeriodo = Math.max(0, previstoPeriodo - recebidoPeriodo);
-  const statusCounts = periodo.reduce((acc, item) => {
+  const statusCounts = período.reduce((acc, item) => {
     acc[item.status] = (acc[item.status] || 0) + 1;
     return acc;
   }, {});
@@ -121,8 +126,8 @@ export default async function DashboardPage({ searchParams }) {
   const cards = [
     { label: "Clientes", value: clientes, detail: `${plan.limite_clientes || "-"} no plano`, icon: UsersRound },
     { label: "Profissionais", value: profissionais, detail: `${plan.limite_profissionais || "-"} no plano`, icon: UsersRound },
-    { label: "Procedimentos", value: procedimentos, detail: "servicos ativos e pacotes", icon: Scissors },
-    { label: "Agendamentos", value: agendamentos, detail: "historico total", icon: CalendarDays },
+    { label: "Procedimentos", value: procedimentos, detail: "serviços ativos e pacotes", icon: Scissors },
+    { label: "Agendamentos", value: agendamentos, detail: "histórico total", icon: CalendarDays },
   ];
 
   const financeCards = [
@@ -134,7 +139,7 @@ export default async function DashboardPage({ searchParams }) {
   return (
     <main className="min-w-0 overflow-x-hidden px-4 py-8 sm:px-6 lg:px-8 xl:px-10">
       <section className="mx-auto max-w-7xl min-w-0">
-        <PageHeader eyebrow="Dashboard" title="Operacao da clinica" description={`Visao executiva de ${brandName}: faturamento, agenda, clientes, equipe e status comercial.`} />
+        <PageHeader eyebrow="Dashboard" title="Operação da clínica" description={`Visão executiva de ${brandName}: faturamento, agenda, clientes, equipe e status comercial.`} />
         {params?.erro === "permissao" ? (
           <div className="mt-6">
             <Notice type="warning" title="Acesso restrito">Seu papel atual nao tem permissao para abrir essa area. O menu mostra apenas os modulos liberados para o seu acesso.</Notice>
@@ -175,7 +180,7 @@ export default async function DashboardPage({ searchParams }) {
           <Card>
             <div className="flex items-center gap-2"><ShieldCheck size={20} className="text-[var(--clinic-primary)]" /><h2 className="font-semibold">Plano e acesso</h2></div>
             <p className="mt-4 text-2xl font-semibold">{plan.nome || activeClinic.plano}</p>
-            <p className="mt-1 text-sm text-neutral-500">{formatMoney(plan.preco_mensal)}/mes - {activeClinic.status}</p>
+            <p className="mt-1 text-sm text-neutral-500">{formatMoney(plan.preco_mensal)}/mês - {activeClinic.status}</p>
             <p className="mt-4 rounded-lg bg-neutral-50 px-3 py-2 text-sm leading-6 text-neutral-600">{billingState.message}</p>
           </Card>
         </div>
@@ -203,7 +208,7 @@ export default async function DashboardPage({ searchParams }) {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[color-mix(in_srgb,var(--clinic-accent)_72%,white)]">Faturamento</p>
-                <h2 className="mt-1 text-xl font-semibold text-white">Ultimos 7 dias</h2>
+                <h2 className="mt-1 text-xl font-semibold text-white">Últimos 7 dias</h2>
               </div>
               <p className="text-sm text-white/60">Previsto x recebido</p>
             </div>
@@ -249,7 +254,7 @@ export default async function DashboardPage({ searchParams }) {
               <h2 className="text-lg font-semibold">Status da agenda</h2>
               <div className="mt-4 space-y-3">
                 {statusRows.length === 0 ? (
-                  <p className="rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-500">Sem agendamentos no periodo.</p>
+                  <p className="rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-500">Sem agendamentos no período.</p>
                 ) : statusRows.map(([status, value]) => (
                   <div key={status}>
                     <div className="flex justify-between gap-3 text-sm"><span className="text-neutral-600">{statusLabel(status)}</span><strong>{value}</strong></div>
@@ -265,14 +270,14 @@ export default async function DashboardPage({ searchParams }) {
 
         <div className="mt-6">
           <Card>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><h2 className="text-lg font-semibold">Proximos agendamentos</h2><Link href="/dashboard/agenda" className="text-sm font-semibold text-[var(--clinic-primary)]">Abrir agenda</Link></div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><h2 className="text-lg font-semibold">Próximos agendamentos</h2><Link href="/dashboard/agenda" className="text-sm font-semibold text-[var(--clinic-primary)]">Abrir agenda</Link></div>
             <div className="mt-4 space-y-3">
               {proximos.length === 0 ? (
-                <EmptyState title="Agenda livre nos proximos horarios" description="Cadastre um atendimento para demonstrar status, WhatsApp rapido, faturamento previsto e filtro por profissional." action={<Link href="/dashboard/agenda" className="inline-flex h-10 items-center rounded-lg bg-[var(--clinic-primary)] px-4 text-sm font-semibold text-white">Criar agendamento</Link>} />
+                <EmptyState title="Agenda livre nos próximos horários" description="Cadastre um atendimento para demonstrar status, WhatsApp rápido, faturamento previsto e filtro por profissional." action={<Link href="/dashboard/agenda" className="inline-flex h-10 items-center rounded-lg bg-[var(--clinic-primary)] px-4 text-sm font-semibold text-white">Criar agendamento</Link>} />
               ) : proximos.map((item) => (
                 <div key={item.id} className="rounded-lg border border-neutral-200 p-4">
-                  <div className="flex items-start justify-between gap-3"><div><p className="font-semibold">{item.clientes?.nome || "Cliente nao informado"}</p><p className="mt-1 text-sm text-neutral-600">{item.procedimentos?.nome || "Procedimento nao informado"}</p></div><span className="rounded-full bg-[color-mix(in_srgb,var(--clinic-accent)_10%,white)] px-3 py-1 text-xs font-bold uppercase text-[var(--clinic-primary)]">{item.status}</span></div>
-                  <p className="mt-3 text-sm text-neutral-500">{new Date(item.inicio).toLocaleString("pt-BR")} com {item.profissionais?.nome || "profissional nao informado"}</p>
+                  <div className="flex items-start justify-between gap-3"><div><p className="font-semibold">{item.clientes?.nome || "Cliente não informado"}</p><p className="mt-1 text-sm text-neutral-600">{item.procedimentos?.nome || "Procedimento não informado"}</p></div><span className="rounded-full bg-[color-mix(in_srgb,var(--clinic-accent)_10%,white)] px-3 py-1 text-xs font-bold uppercase text-[var(--clinic-primary)]">{item.status}</span></div>
+                  <p className="mt-3 text-sm text-neutral-500">{new Date(item.inicio).toLocaleString("pt-BR")} com {item.profissionais?.nome || "profissional não informado"}</p>
                 </div>
               ))}
             </div>

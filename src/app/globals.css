@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 :root {
   --background: #f5f4f0;
@@ -481,3 +481,88 @@ textarea {
   }
 }
 
+
+.public-reveal {
+  animation: public-reveal-fallback 0.7s ease both;
+}
+
+.public-booking-section {
+  border-radius: 2.5rem;
+  background:
+    radial-gradient(circle at 12% 6%, color-mix(in srgb, var(--clinic-accent, #10b981) 18%, transparent), transparent 24rem),
+    radial-gradient(circle at 88% 32%, color-mix(in srgb, var(--clinic-primary, #047857) 12%, transparent), transparent 28rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.34), rgba(23, 19, 15, 0.045));
+}
+
+.public-hover-card,
+.public-service-card {
+  transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
+}
+
+.public-hover-card:hover,
+.public-service-card:hover {
+  transform: scale(0.975);
+  filter: saturate(1.05);
+  box-shadow: 0 26px 76px color-mix(in srgb, var(--clinic-accent, #10b981) 24%, rgba(23, 19, 15, 0.12));
+}
+
+.public-service-card[data-featured="true"]::before {
+  animation: public-featured-reflection 3.8s ease-in-out infinite;
+}
+
+@supports (animation-timeline: view()) {
+  .public-reveal {
+    animation-name: public-scroll-reveal;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 34%;
+  }
+
+  .public-reveal:nth-of-type(even) {
+    animation-name: public-scroll-reveal-side;
+  }
+}
+
+@keyframes public-reveal-fallback {
+  from {
+    opacity: 0;
+    transform: translateY(34px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes public-scroll-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(52px) scale(0.965);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes public-scroll-reveal-side {
+  0% {
+    opacity: 0;
+    transform: translateX(-46px) scale(0.965);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes public-featured-reflection {
+  0%, 100% {
+    opacity: 0.45;
+    transform: translateX(-10%) rotate(0deg);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translateX(12%) rotate(0deg);
+  }
+}

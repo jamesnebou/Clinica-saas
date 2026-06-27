@@ -1,4 +1,4 @@
-﻿import { CreditCard, Package, TrendingUp, Wallet } from "lucide-react";
+import { CreditCard, Package, TrendingUp, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireClinicSection } from "@/lib/auth/session";
 import { EmptyClinicState, Field, PageHeader, SubmitButton, TextArea } from "@/components/app-shell/ui";
@@ -42,7 +42,7 @@ export default async function FinanceiroPage({ searchParams }) {
   const [agendamentosResult, pagamentosResult, clientesResult, procedimentosResult, pacotesResult, clientePacotesResult] = await Promise.all([
     supabase
       .from("agendamentos")
-      .select("id, cliente_id, profissional_id, inicio, valor, valor_pago, pagamento_status, forma_pagamento, clientes(nome), profissionais(nome, comissao_percentual), procedimentos(nome)")
+      .select("id, cliente_id, profissional_id, inicio, status, valor, valor_pago, pagamento_status, forma_pagamento, clientes(nome), profissionais(nome, comissao_percentual), procedimentos(nome)")
       .eq("clinica_id", activeClinic.id)
       .gte("inicio", start)
       .lt("inicio", end)
@@ -56,7 +56,7 @@ export default async function FinanceiroPage({ searchParams }) {
       .order("created_at", { ascending: false }),
     supabase.from("clientes").select("id, nome").eq("clinica_id", activeClinic.id).order("nome"),
     supabase.from("procedimentos").select("id, nome").eq("clinica_id", activeClinic.id).eq("ativo", true).order("nome"),
-    supabase.from("pacotes_clinica").select("id, nome, quantidade_sessoes, valor, validade_dias, ativo").eq("clinica_id", activeClinic.id).order("created_at", { ascending: false }),
+    supabase.from("pacotes_clinica").select("id, nome, quantidade_sessoes, valor, validade_dias, ativo, procedimento_ids").eq("clinica_id", activeClinic.id).order("created_at", { ascending: false }),
     supabase.from("cliente_pacotes").select("id, nome_pacote, sessoes_total, sessoes_utilizadas, valor_total, status, clientes(nome)").eq("clinica_id", activeClinic.id).order("created_at", { ascending: false }).limit(20),
   ]);
 
@@ -66,10 +66,12 @@ export default async function FinanceiroPage({ searchParams }) {
   const procedimentos = procedimentosResult.data || [];
   const pacotes = pacotesResult.data || [];
   const clientePacotes = clientePacotesResult.data || [];
-  const faturamentoPrevisto = agendamentos.reduce((acc, item) => acc + Number(item.valor || 0), 0);
-  const recebido = agendamentos.reduce((acc, item) => acc + Number(item.valor_pago || 0), 0) + pagamentos.filter((item) => !item.agendamento_id).reduce((acc, item) => acc + Number(item.valor_pago || 0), 0);
-  const pendente = Math.max(0, faturamentoPrevisto - agendamentos.reduce((acc, item) => acc + Number(item.valor_pago || 0), 0));
-  const comissoes = agendamentos.reduce((acc, item) => {
+  const agendamentosFaturaveis = agendamentos.filter((item) => !["cancelado", "faltou"].includes(item.status));
+  const faturamentoPrevisto = agendamentosFaturaveis.reduce((acc, item) => acc + Number(item.valor || 0), 0);
+  const recebidoAgendamentos = agendamentosFaturaveis.reduce((acc, item) => acc + Number(item.valor_pago || 0), 0);
+  const recebido = recebidoAgendamentos + pagamentos.filter((item) => !item.agendamento_id).reduce((acc, item) => acc + Number(item.valor_pago || 0), 0);
+  const pendente = Math.max(0, faturamentoPrevisto - recebidoAgendamentos);
+  const comissoes = agendamentosFaturaveis.reduce((acc, item) => {
     if (item.pagamento_status !== "pago") return acc;
     return acc + (Number(item.valor_pago || item.valor || 0) * Number(item.profissionais?.comissao_percentual || 0)) / 100;
   }, 0);
@@ -115,7 +117,7 @@ export default async function FinanceiroPage({ searchParams }) {
                         <p className="font-semibold">{item.clientes?.nome || "Cliente"}</p>
                         <p className="mt-1 text-sm text-neutral-600">{item.procedimentos?.nome || "Procedimento"} · {new Date(item.inicio).toLocaleDateString("pt-BR")}</p>
                       </div>
-                      <div className="text-sm font-semibold text-neutral-700">{formatMoney(item.valor_pago)} / {formatMoney(item.valor)} · {item.pagamento_status}</div>
+                      <div className="text-sm font-semibold text-neutral-700">{formatMoney(item.valor_pago)} / {formatMoney(item.valor)} · {item.status === "cancelado" || item.status === "faltou" ? `${item.status} · ` : ""}{item.pagamento_status}</div>
                     </div>
                   </summary>
                   <form action={updateAgendamentoFinanceiroAction} className="mt-4 grid gap-4 rounded-lg bg-neutral-50 p-3 md:grid-cols-3">
@@ -155,10 +157,22 @@ export default async function FinanceiroPage({ searchParams }) {
               <h2 className="text-lg font-semibold">Criar pacote</h2>
               <div className="mt-4 space-y-4">
                 <Field label="Nome" name="nome" required />
-                <SelectField label="Procedimento" name="procedimento_id">
-                  <option value="">Pacote geral</option>
-                  {procedimentos.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}
-                </SelectField>
+                <div>
+                  <span className="text-sm font-medium text-neutral-700">Procedimentos do pacote</span>
+                  <div className="mt-2 grid max-h-56 gap-2 overflow-auto rounded-lg border border-neutral-200 bg-white p-3">
+                    <label className="inline-flex items-center gap-2 text-sm text-neutral-600">
+                      <input type="checkbox" name="procedimento_ids" value="" />
+                      Pacote geral, sem procedimento específico
+                    </label>
+                    {procedimentos.map((item) => (
+                      <label key={item.id} className="inline-flex items-center gap-2 text-sm text-neutral-700">
+                        <input type="checkbox" name="procedimento_ids" value={item.id} />
+                        {item.nome}
+                      </label>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-neutral-500">Selecione um ou mais procedimentos para montar um pacote personalizado.</p>
+                </div>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <Field label="Sessões" name="quantidade_sessoes" type="number" defaultValue="5" />
                   <Field label="Valor" name="valor" type="number" defaultValue="0" />

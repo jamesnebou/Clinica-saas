@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-
-function minutesFromTime(value) {
-  const [hours, minutes] = String(value || "").split(":").map(Number);
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
-  return hours * 60 + minutes;
-}
+import { getWorkingPeriods } from "@/lib/clinic/schedule";
 
 function pad(value) {
   return String(value).padStart(2, "0");
@@ -74,19 +69,17 @@ export async function GET(request) {
   if (!profissionais.length) return NextResponse.json({ slots: [], message: "Nenhum profissional disponivel." });
 
   const schedule = clinic.metadata?.horario_funcionamento || {};
-  const activeDays = Array.isArray(schedule.dias) && schedule.dias.length ? schedule.dias.map(String) : ["1", "2", "3", "4", "5", "6"];
   const dateAtNoon = new Date(`${date}T12:00:00`);
   const day = String(dateAtNoon.getDay());
+  const periods = getWorkingPeriods(schedule, day);
 
-  if (!activeDays.includes(day)) {
+  if (!periods.length) {
     return NextResponse.json({ slots: [], message: "Dia fora do expediente da clinica." });
   }
 
-  const startMinutes = minutesFromTime(schedule.inicio || "08:00");
-  const endMinutes = minutesFromTime(schedule.fim || "18:00");
   const duration = Math.max(1, Number(procedimento.duracao_minutos || 60));
 
-  if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes + duration) {
+  if (!periods.some((period) => period.end >= period.start + duration)) {
     return NextResponse.json({ slots: [], message: "Expediente insuficiente para este procedimento." });
   }
 
@@ -106,24 +99,26 @@ export async function GET(request) {
   const now = new Date();
   const slots = [];
 
-  for (let minutes = startMinutes; minutes + duration <= endMinutes; minutes += 30) {
-    const value = localDateTime(date, minutes);
-    const slotDate = new Date(value);
-    if (slotDate <= now) continue;
+  for (const period of periods) {
+    for (let minutes = period.start; minutes + duration <= period.end; minutes += 30) {
+      const value = localDateTime(date, minutes);
+      const slotDate = new Date(value);
+      if (slotDate <= now) continue;
 
-    const availableProfessional = profissionais.find((professional) => {
-      const professionalBookings = bookings.filter((booking) => booking.profissional_id === professional.id);
-      return !professionalBookings.some((booking) => overlaps(minutes, minutes + duration, booking));
-    });
+      const availableProfessional = profissionais.find((professional) => {
+        const professionalBookings = bookings.filter((booking) => booking.profissional_id === professional.id);
+        return !professionalBookings.some((booking) => overlaps(minutes, minutes + duration, booking));
+      });
 
-    if (!availableProfessional) continue;
+      if (!availableProfessional) continue;
 
-    slots.push({
-      value,
-      label: `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`,
-      profissional_id: availableProfessional.id,
-      profissional_nome: availableProfessional.nome,
-    });
+      slots.push({
+        value,
+        label: `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`,
+        profissional_id: availableProfessional.id,
+        profissional_nome: availableProfessional.nome,
+      });
+    }
   }
 
   return NextResponse.json({ slots });

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createAsaasCustomerForPatient, createAsaasPaymentForBooking, isAsaasConfigured } from "@/lib/asaas/client";
 import { notifyClinicPublicBooking } from "@/lib/notifications/booking";
+import { isWithinWorkingPeriods } from "@/lib/clinic/schedule";
 
 function text(formData, key) {
   return String(formData.get(key) || "").trim();
@@ -17,12 +18,6 @@ function nullableText(formData, key) {
 
 function normalizePhone(value) {
   return String(value || "").replace(/\D/g, "");
-}
-
-function minutesFromTime(value) {
-  const [hours, minutes] = String(value || "").split(":").map(Number);
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
-  return hours * 60 + minutes;
 }
 
 function publicRedirect(slug, params) {
@@ -40,19 +35,8 @@ function calculateDeposit(procedimento) {
 
 function assertWorkingHours({ clinic, start, end, slug }) {
   const schedule = clinic?.metadata?.horario_funcionamento || {};
-  const startMinutes = minutesFromTime(schedule.inicio || "08:00");
-  const endMinutes = minutesFromTime(schedule.fim || "18:00");
-  const activeDays = Array.isArray(schedule.dias) && schedule.dias.length ? schedule.dias.map(String) : ["1", "2", "3", "4", "5", "6"];
-  const day = String(start.getDay());
 
-  if (!activeDays.includes(day)) {
-    publicRedirect(slug, { erro: "agenda", mensagem: "Este dia nao esta disponivel para agendamento online." });
-  }
-
-  const startsAt = start.getHours() * 60 + start.getMinutes();
-  const endsAt = end.getHours() * 60 + end.getMinutes();
-
-  if (startMinutes === null || endMinutes === null || startsAt < startMinutes || endsAt > endMinutes) {
+  if (!isWithinWorkingPeriods({ schedule, startDate: start, endDate: end })) {
     publicRedirect(slug, { erro: "agenda", mensagem: "Este horario esta fora do expediente da clinica." });
   }
 }

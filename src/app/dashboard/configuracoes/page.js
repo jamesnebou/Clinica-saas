@@ -1,11 +1,12 @@
-﻿import { Clock, CreditCard, Mail, MessageCircle, Palette, Settings } from "lucide-react";
+import { Clock, CreditCard, Mail, MessageCircle, Palette, Settings } from "lucide-react";
 import { requireClinicSection } from "@/lib/auth/session";
 import { EmptyClinicState, Field, PageHeader, SubmitButton, TextArea } from "@/components/app-shell/ui";
 import { removeClinicDomainAction, syncClinicDomainAction, testClinicWhatsappIntegrationAction, updateClinicAccountAction, updateClinicSettingsAction } from "../actions";
 import { ConfigTabs } from "./config-tabs";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { normalizeSchedule } from "@/lib/clinic/schedule";
 
-export const metadata = { title: "Configuracoes | Clinica SaaS" };
+export const metadata = { title: "Configuracoes | Clínica SaaS" };
 export const dynamic = "force-dynamic";
 
 const weekDays = [
@@ -112,8 +113,7 @@ export default async function ConfiguracoesPage({ searchParams }) {
   const membership = context.memberships?.find((item) => item.clinica_id === activeClinic.id) || context.memberships?.[0] || null;
   const meta = activeClinic.metadata || {};
   const site = meta.site_publico || {};
-  const schedule = meta.horario_funcionamento || {};
-  const selectedDays = Array.isArray(schedule.dias) && schedule.dias.length ? schedule.dias.map(String) : ["1", "2", "3", "4", "5", "6"];
+  const schedule = normalizeSchedule(meta.horario_funcionamento || {});
   const { data: domains = [] } = await supabaseAdmin
     .from("clinica_dominios")
     .select("dominio, status, observacoes")
@@ -128,7 +128,7 @@ export default async function ConfiguracoesPage({ searchParams }) {
   return (
     <main className="px-5 py-8 sm:px-8 lg:px-10">
       <section className="mx-auto max-w-7xl">
-        <PageHeader eyebrow="Clinica" title="Configuracoes da clinica" description="Ajuste dados comerciais, identidade visual, expediente, politica de cancelamento e WhatsApp padrao." />
+        <PageHeader eyebrow="Clínica" title="Configuracoes da clinica" description="Ajuste dados comerciais, identidade visual, expediente, politica de cancelamento e WhatsApp padrao." />
 
         {params?.ok === "configuracoes" ? <Notice>Configuracoes atualizadas com sucesso.</Notice> : null}
         {params?.ok === "whatsapp" ? <Notice>Mensagem de teste enviada pelo WhatsApp.</Notice> : null}
@@ -208,20 +208,20 @@ export default async function ConfiguracoesPage({ searchParams }) {
           </section>
 
           <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2"><Settings size={20} className="text-[var(--clinic-primary)]" /><h2 className="text-lg font-semibold">Site publico de vendas e agendamento</h2></div>
+            <div className="flex items-center gap-2"><Settings size={20} className="text-[var(--clinic-primary)]" /><h2 className="text-lg font-semibold">Site p?blico de vendas e agendamento</h2></div>
             <div className="mt-5 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
-              Link publico atual: <a href={`/c/${activeClinic.slug}`} target="_blank" className="font-bold text-[var(--clinic-primary)] underline">/c/{activeClinic.slug}</a>
+              Link p?blico atual: <a href={`/c/${activeClinic.slug}`} target="_blank" className="font-bold text-[var(--clinic-primary)] underline">/c/{activeClinic.slug}</a>
             </div>
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               <label className="flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">
                 <input type="checkbox" name="site_publicado" defaultChecked={site.publicado !== false} />
                 Publicar site e agendamento online
               </label>
-              <Field label="Dominio proprio desejado" name="site_dominio" placeholder="www.suaclinica.com.br" defaultValue={domains[0]?.dominio || ""} />
-              <Field label="Texto pequeno acima do titulo" name="site_eyebrow" defaultValue={site.eyebrow || ""} placeholder="Estetica premium e atendimento personalizado" />
-              <Field label="Titulo principal" name="site_titulo_hero" defaultValue={site.titulo_hero || ""} placeholder="Realce sua beleza com naturalidade" />
+              <Field label="Domínio próprio desejado" name="site_dominio" placeholder="www.suaclinica.com.br" defaultValue={domains[0]?.dominio || ""} />
+              <Field label="Texto pequeno acima do título" name="site_eyebrow" defaultValue={site.eyebrow || ""} placeholder="Estética premium e atendimento personalizado" />
+              <Field label="Título principal" name="site_titulo_hero" defaultValue={site.titulo_hero || ""} placeholder="Realce sua beleza com naturalidade" />
               <div className="lg:col-span-2">
-                <TextArea label="Subtitulo da pagina" name="site_subtitulo_hero" defaultValue={site.subtitulo_hero || ""} placeholder="Apresente a clinica, diferenciais e convite para agendamento." />
+                <TextArea label="Subtítulo da página" name="site_subtitulo_hero" defaultValue={site.subtitulo_hero || ""} placeholder="Apresente a clínica, diferenciais e convite para agendamento." />
               </div>
               <Field label="Nome da profissional em destaque" name="site_nome_profissional" defaultValue={site.nome_profissional || ""} />
               <Field label="Credencial 1" name="site_credencial_1" defaultValue={site.credencial_1 || ""} placeholder="Protocolos personalizados" />
@@ -240,28 +240,34 @@ export default async function ConfiguracoesPage({ searchParams }) {
                 {site.profissional_image_url ? <span className="mt-2 block text-xs font-semibold text-[var(--clinic-primary)]">Imagem salva.</span> : null}
               </label>
               <label className="block">
-                <span className="text-sm font-medium text-neutral-700">Foto da clinica 1</span>
+                <span className="text-sm font-medium text-neutral-700">Foto da clínica 1</span>
                 <input name="site_clinica_foto_1_file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[var(--clinic-primary)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white" />
                 <span className="mt-2 block text-xs leading-5 text-neutral-500">Galeria principal. Recomendado: 1600x1000 px, horizontal. Limite 50 MB.</span>
                 {site.clinica_foto_1 ? <span className="mt-2 block text-xs font-semibold text-[var(--clinic-primary)]">Imagem salva.</span> : null}
               </label>
               <label className="block">
-                <span className="text-sm font-medium text-neutral-700">Foto da clinica 2</span>
+                <span className="text-sm font-medium text-neutral-700">Foto da clínica 2</span>
                 <input name="site_clinica_foto_2_file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[var(--clinic-primary)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white" />
                 <span className="mt-2 block text-xs leading-5 text-neutral-500">Galeria lateral. Recomendado: 1200x800 px. Limite 50 MB.</span>
                 {site.clinica_foto_2 ? <span className="mt-2 block text-xs font-semibold text-[var(--clinic-primary)]">Imagem salva.</span> : null}
               </label>
               <label className="block">
-                <span className="text-sm font-medium text-neutral-700">Foto da clinica 3</span>
+                <span className="text-sm font-medium text-neutral-700">Foto da clínica 3</span>
                 <input name="site_clinica_foto_3_file" type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[var(--clinic-primary)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white" />
                 <span className="mt-2 block text-xs leading-5 text-neutral-500">Detalhe/ambiente. Recomendado: 1200x800 px. Limite 50 MB.</span>
                 {site.clinica_foto_3 ? <span className="mt-2 block text-xs font-semibold text-[var(--clinic-primary)]">Imagem salva.</span> : null}
               </label>
+              <label className="block">
+                <span className="text-sm font-medium text-neutral-700">Favicon do site</span>
+                <input name="site_favicon_file" type="file" accept="image/png,image/svg+xml,image/x-icon,image/vnd.microsoft.icon,image/webp" className="mt-2 block w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[var(--clinic-primary)] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white" />
+                <span className="mt-2 block text-xs leading-5 text-neutral-500">Ícone do navegador. Recomendado: 512x512 px em PNG, SVG ou ICO. Limite 50 MB.</span>
+                {site.favicon_url ? <span className="mt-2 block text-xs font-semibold text-[var(--clinic-primary)]">Favicon salvo.</span> : null}
+              </label>
               <Field label="Instagram URL" name="site_instagram_url" defaultValue={site.instagram_url || ""} placeholder="https://instagram.com/..." />
               <Field label="Google Maps URL" name="site_google_maps_url" defaultValue={site.google_maps_url || ""} placeholder="https://maps.google.com/..." />
-              <Field label="Avaliacoes Google URL" name="site_google_reviews_url" defaultValue={site.google_reviews_url || ""} placeholder="https://g.page/r/..." />
+              <Field label="Avaliações Google URL" name="site_google_reviews_url" defaultValue={site.google_reviews_url || ""} placeholder="https://g.page/r/..." />
               <div className="lg:col-span-2">
-                <TextArea label="Bio/apresentacao da profissional" name="site_bio_profissional" defaultValue={site.bio_profissional || ""} placeholder="Conte a historia, especialidade, abordagem e autoridade da profissional." />
+                <TextArea label="Bio/apresentação da profissional" name="site_bio_profissional" defaultValue={site.bio_profissional || ""} placeholder="Conte a história, especialidade, abordagem e autoridade da profissional. Use **texto** para negrito e quebras de linha livremente." />
               </div>
             </div>
             {domains.length ? (
@@ -275,16 +281,16 @@ export default async function ConfiguracoesPage({ searchParams }) {
 
           <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2"><Mail size={20} className="text-[var(--clinic-primary)]" /><h2 className="text-lg font-semibold">Depoimentos do site</h2></div>
-            <p className="mt-2 text-sm text-neutral-600">Use avaliacoes reais do Google por Place ID ou mantenha depoimentos manuais como fallback.</p>
+            <p className="mt-2 text-sm text-neutral-600">Use avaliações reais do Google por Place ID ou mantenha depoimentos manuais como fallback.</p>
             <div className="mt-5 rounded-lg border border-[color-mix(in_srgb,var(--clinic-primary)_22%,#e5e5e5)] bg-[color-mix(in_srgb,var(--clinic-accent)_8%,white)] p-4">
               <label className="inline-flex items-center gap-2 text-sm font-bold text-neutral-800">
                 <input type="checkbox" name="site_google_reviews_ativo" defaultChecked={Boolean(site.google_reviews_ativo)} />
-                Buscar avaliacoes reais via Google Places API
+                Buscar avaliações reais via Google Places API
               </label>
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                <Field label="Google Place ID da clinica" name="site_google_place_id" defaultValue={site.google_place_id || ""} placeholder="ChIJ..." />
+                <Field label="Google Place ID da clínica" name="site_google_place_id" defaultValue={site.google_place_id || ""} placeholder="ChIJ..." />
                 <div className="rounded-lg border border-white/70 bg-white/70 px-4 py-3 text-xs leading-5 text-neutral-600">
-                  Configure <strong>GOOGLE_MAPS_API_KEY</strong> no ambiente do SaaS. A busca e feita no servidor com cache de 6 horas para reduzir chamadas.
+                  Configure <strong>GOOGLE_MAPS_API_KEY</strong> no ambiente do SaaS. A busca é feita no servidor com cache de 6 horas para reduzir chamadas.
                 </div>
               </div>
             </div>
@@ -298,7 +304,7 @@ export default async function ConfiguracoesPage({ searchParams }) {
                       <Field label="Nome" name={`depoimento_${index}_nome`} defaultValue={depoimento.nome || ""} placeholder="Mariana S." />
                       <Field label="Procedimento" name={`depoimento_${index}_procedimento`} defaultValue={depoimento.procedimento || ""} placeholder="Tratamento facial" />
                       <div className="lg:col-span-2">
-                        <TextArea label="Texto do depoimento" name={`depoimento_${index}_texto`} defaultValue={depoimento.texto || ""} placeholder="Escreva uma avaliacao curta, natural e confiavel." />
+                        <TextArea label="Texto do depoimento" name={`depoimento_${index}_texto`} defaultValue={depoimento.texto || ""} placeholder="Escreva uma avaliação curta, natural e confiável." />
                       </div>
                     </div>
                   </div>
@@ -308,18 +314,30 @@ export default async function ConfiguracoesPage({ searchParams }) {
           </section>
 
           <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2"><Clock size={20} className="text-[var(--clinic-primary)]" /><h2 className="text-lg font-semibold">Horario de funcionamento</h2></div>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field label="Inicio do expediente" name="expediente_inicio" type="time" defaultValue={schedule.inicio || "08:00"} />
-              <Field label="Fim do expediente" name="expediente_fim" type="time" defaultValue={schedule.fim || "18:00"} />
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {weekDays.map(([value, label]) => (
-                <label key={value} className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">
-                  <input type="checkbox" name="dias_funcionamento" value={value} defaultChecked={selectedDays.includes(value)} />
-                  {label}
-                </label>
-              ))}
+            <div className="flex items-center gap-2"><Clock size={20} className="text-[var(--clinic-primary)]" /><h2 className="text-lg font-semibold">Horário de funcionamento</h2></div>
+            <p className="mt-2 text-sm leading-6 text-neutral-600">Configure cada dia separadamente. Use o segundo período apenas quando a clínica realmente fechar no meio do dia.</p>
+            <div className="mt-5 grid gap-3">
+              {weekDays.map(([value, label]) => {
+                const day = schedule.dias_config?.[value] || { ativo: false, periodos: [] };
+                const first = day.periodos?.[0] || {};
+                const second = day.periodos?.[1] || {};
+                return (
+                  <div key={value} className="grid gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3 lg:grid-cols-[120px_1fr_1fr] lg:items-center">
+                    <label className="inline-flex items-center gap-2 text-sm font-bold text-neutral-800">
+                      <input type="checkbox" name={`exp_${value}_ativo`} defaultChecked={Boolean(day.ativo)} />
+                      {label}
+                    </label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Abre" name={`exp_${value}_inicio_1`} type="time" defaultValue={first.inicio || ""} />
+                      <Field label="Fecha" name={`exp_${value}_fim_1`} type="time" defaultValue={first.fim || ""} />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Reabre opcional" name={`exp_${value}_inicio_2`} type="time" defaultValue={second.inicio || ""} />
+                      <Field label="Fecha opcional" name={`exp_${value}_fim_2`} type="time" defaultValue={second.fim || ""} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
@@ -355,7 +373,7 @@ export default async function ConfiguracoesPage({ searchParams }) {
                 </label>
                 <div className="mt-4 grid gap-4 lg:grid-cols-2">
                   <Field label="E-mail que recebe os avisos" name="email_destino" type="email" defaultValue={integration?.email_destino || activeClinic.email || ""} />
-                  <Field label="Remetente" name="email_remetente" defaultValue={integration?.email_remetente || ""} placeholder="Clinica <avisos@seudominio.com.br>" />
+                  <Field label="Remetente" name="email_remetente" defaultValue={integration?.email_remetente || ""} placeholder="Clínica <avisos@seudominio.com.br>" />
                 </div>
               </div>
 

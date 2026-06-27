@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -9,6 +9,7 @@ import { uploadClientPhoto, uploadClinicLogo, uploadClinicSiteImage } from "@/li
 import { assertClinicLimit, assertClinicOperational } from "@/lib/saas/plans";
 import { ensureVercelProjectDomain, getVercelProjectDomain, normalizeCustomDomain, removeVercelProjectDomain } from "@/lib/vercel/domains";
 import { sendWhatsAppIntegrationTest } from "@/lib/notifications/booking";
+import { buildScheduleFromForm, isWithinWorkingPeriods } from "@/lib/clinic/schedule";
 
 async function getScopedSupabase() {
   const context = await requireClinic();
@@ -148,32 +149,11 @@ function safeHexColor(value, fallback) {
   return /^#[0-9a-f]{6}$/i.test(color) ? color : fallback;
 }
 
-function minutesFromTime(value) {
-  const [hours, minutes] = String(value || "").split(":").map(Number);
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
-  return hours * 60 + minutes;
-}
-
-function localTimeFromDate(date) {
-  return date.getHours() * 60 + date.getMinutes();
-}
-
 function assertWithinWorkingHours({ clinic, inicioRaw, fimRaw, inicio, fim, formData }) {
   const schedule = clinic?.metadata?.horario_funcionamento || {};
-  const startMinutes = minutesFromTime(schedule.inicio || "08:00");
-  const endMinutes = minutesFromTime(schedule.fim || "18:00");
-  const activeDays = Array.isArray(schedule.dias) && schedule.dias.length ? schedule.dias.map(String) : ["1", "2", "3", "4", "5", "6"];
-  const day = String(inicio.getDay());
 
-  if (!activeDays.includes(day)) {
-    redirectAgendaError(formData, "Este dia esta fora do expediente configurado da clinica.", inicioRaw.slice(0, 10));
-  }
-
-  const startsAt = localTimeFromDate(inicio);
-  const endsAt = localTimeFromDate(fim);
-
-  if (startMinutes === null || endMinutes === null || startsAt < startMinutes || endsAt > endMinutes || fimRaw.slice(0, 10) !== inicioRaw.slice(0, 10)) {
-    redirectAgendaError(formData, "Este horario esta fora do expediente configurado da clinica.", inicioRaw.slice(0, 10));
+  if (!isWithinWorkingPeriods({ schedule, startDate: inicio, endDate: fim }) || fimRaw.slice(0, 10) !== inicioRaw.slice(0, 10)) {
+    redirectAgendaError(formData, "Este horário está fora do expediente configurado da clínica.", inicioRaw.slice(0, 10));
   }
 }
 
@@ -752,12 +732,17 @@ export async function updateAgendamentoFinanceiroAction(formData) {
 
 export async function createPacoteAction(formData) {
   const { supabase, clinicaId } = await getScopedSupabase();
+  const procedimentoIds = formData
+    .getAll("procedimento_ids")
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
 
   const { error } = await supabase.from("pacotes_clinica").insert({
     clinica_id: clinicaId,
     nome: requireValue(text(formData, "nome"), "Informe o nome do pacote."),
     descricao: nullableText(formData, "descricao"),
-    procedimento_id: nullableText(formData, "procedimento_id"),
+    procedimento_id: procedimentoIds[0] || null,
+    procedimento_ids: procedimentoIds,
     quantidade_sessoes: Math.max(1, numberValue(formData, "quantidade_sessoes", 1)),
     valor: numberValue(formData, "valor", 0),
     validade_dias: Math.max(1, numberValue(formData, "validade_dias", 90)),
@@ -1155,7 +1140,6 @@ export async function updateClinicSettingsAction(formData) {
   requireClinicManager(memberships, clinicaId, "/dashboard/configuracoes");
 
   const metadata = activeClinic.metadata || {};
-  const dias = formData.getAll("dias_funcionamento").map((item) => String(item));
   const logoFile = formData.get("logo_file");
   let uploadedLogo = null;
   const siteUploads = {};
@@ -1168,6 +1152,7 @@ export async function updateClinicSettingsAction(formData) {
       ["site_clinica_foto_1_file", "clinica-1"],
       ["site_clinica_foto_2_file", "clinica-2"],
       ["site_clinica_foto_3_file", "clinica-3"],
+      ["site_favicon_file", "favicon"],
     ]) {
       const uploaded = await uploadClinicSiteImage({ clinicaId, file: formData.get(field), slot });
       if (uploaded?.publicUrl) siteUploads[field] = uploaded;
@@ -1192,18 +1177,14 @@ export async function updateClinicSettingsAction(formData) {
 
   const nextMetadata = {
     ...metadata,
-    brand_name: nullableText(formData, "brand_name") || requireValue(text(formData, "nome"), "Informe o nome da clinica."),
+    brand_name: nullableText(formData, "brand_name") || requireValue(text(formData, "nome"), "Informe o nome da clínica."),
     logo_url: uploadedLogo?.publicUrl || metadata.logo_url || "",
     logo_storage_path: uploadedLogo?.path || metadata.logo_storage_path || null,
     logo_mime_type: uploadedLogo?.mimeType || metadata.logo_mime_type || null,
     logo_tamanho_bytes: uploadedLogo?.size || metadata.logo_tamanho_bytes || null,
     primary_color: safeHexColor(text(formData, "primary_color"), metadata.primary_color || "#047857"),
     accent_color: safeHexColor(text(formData, "accent_color"), metadata.accent_color || "#10b981"),
-    horario_funcionamento: {
-      inicio: text(formData, "expediente_inicio") || "08:00",
-      fim: text(formData, "expediente_fim") || "18:00",
-      dias: dias.length ? dias : ["1", "2", "3", "4", "5", "6"],
-    },
+    horario_funcionamento: buildScheduleFromForm(formData),
     politica_cancelamento: nullableText(formData, "politica_cancelamento"),
     whatsapp_mensagem_padrao: nullableText(formData, "whatsapp_mensagem_padrao"),
     site_publico: {
@@ -1227,6 +1208,8 @@ export async function updateClinicSettingsAction(formData) {
       clinica_foto_2_storage_path: siteUploads.site_clinica_foto_2_file?.path || metadata.site_publico?.clinica_foto_2_storage_path || null,
       clinica_foto_3: siteUploads.site_clinica_foto_3_file?.publicUrl || metadata.site_publico?.clinica_foto_3 || "",
       clinica_foto_3_storage_path: siteUploads.site_clinica_foto_3_file?.path || metadata.site_publico?.clinica_foto_3_storage_path || null,
+      favicon_url: siteUploads.site_favicon_file?.publicUrl || metadata.site_publico?.favicon_url || "",
+      favicon_storage_path: siteUploads.site_favicon_file?.path || metadata.site_publico?.favicon_storage_path || null,
       instagram_url: nullableText(formData, "site_instagram_url"),
       google_maps_url: nullableText(formData, "site_google_maps_url"),
       google_reviews_url: nullableText(formData, "site_google_reviews_url"),
@@ -1241,7 +1224,7 @@ export async function updateClinicSettingsAction(formData) {
   const { data: updatedClinic, error } = await supabaseAdmin
     .from("clinicas")
     .update({
-      nome: requireValue(text(formData, "nome"), "Informe o nome da clinica."),
+      nome: requireValue(text(formData, "nome"), "Informe o nome da clínica."),
       documento: nullableText(formData, "documento"),
       telefone: nullableText(formData, "telefone"),
       email: nullableText(formData, "email"),
