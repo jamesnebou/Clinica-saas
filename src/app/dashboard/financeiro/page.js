@@ -4,7 +4,7 @@ import { requireClinicSection } from "@/lib/auth/session";
 import { EmptyClinicState, Field, PageHeader, SubmitButton, TextArea } from "@/components/app-shell/ui";
 import { createPacoteAction, sellClientePacoteAction, updateAgendamentoFinanceiroAction } from "../actions";
 
-export const metadata = { title: "Financeiro | Clinica SaaS" };
+export const metadata = { title: "Financeiro | Clínica SaaS" };
 
 function formatMoney(value) {
   return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

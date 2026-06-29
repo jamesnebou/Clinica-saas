@@ -93,10 +93,10 @@ export default async function AssinaturaPage({ searchParams }) {
         {params?.ok === "assinatura" ? <Notice type="success">Assinatura enviada ao Asaas e plano ativado no sistema. O webhook manterá a cobrança sincronizada.</Notice> : null}
         {params?.ok === "email" ? <Notice type="success">E-mail de cobrança atualizado.</Notice> : null}
         {params?.erro === "asaas" ? <Notice>O Asaas ainda não está configurado. Defina `ASAAS_API_KEY` e `ASAAS_BASE_URL` na Vercel para ativar planos automaticamente.</Notice> : null}
-        {params?.erro === "asaas_api" ? <Notice>{params?.mensagem || "Não foi possível criar a assinatura no Asaas agora. Confira a chave, ambiente e dados da clinica."}</Notice> : null}
-        {params?.erro === "permissao" ? <Notice>{params?.mensagem || "Seu usuario nao tem permissao para alterar a assinatura da clinica."}</Notice> : null}
-        {params?.erro === "upgrade" || params?.erro === "clinica" || params?.erro === "email" ? <Notice>{params?.mensagem || "Não foi possível processar esta alteracao agora."}</Notice> : null}
-        {params?.erro === "plano" ? <Notice>Plano nao encontrado ou inativo. Revise os planos no painel interno.</Notice> : null}
+        {params?.erro === "asaas_api" ? <Notice>{params?.mensagem || "Não foi possível criar a assinatura no Asaas agora. Confira a chave, ambiente e dados da clínica."}</Notice> : null}
+        {params?.erro === "permissao" ? <Notice>{params?.mensagem || "Seu usuário não tem permissão para alterar a assinatura da clínica."}</Notice> : null}
+        {params?.erro === "upgrade" || params?.erro === "clinica" || params?.erro === "email" ? <Notice>{params?.mensagem || "Não foi possível processar esta alteração agora."}</Notice> : null}
+        {params?.erro === "plano" ? <Notice>Plano não encontrado ou inativo. Revise os planos no painel interno.</Notice> : null}
         {openCharge ? (
           <Notice>
             Existe uma cobrança de {formatMoney(openCharge.valor)} com vencimento em {formatDate(openCharge.vencimento)} aguardando pagamento. Se ela vencer, o sistema pode ser marcado como inadimplente e novas operações podem ser bloqueadas automaticamente.
@@ -169,7 +169,7 @@ export default async function AssinaturaPage({ searchParams }) {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="font-semibold">{plan.nome}</h3>
-                        <p className="mt-1 text-sm text-neutral-500">{formatMoney(plan.preco_mensal)}/mes</p>
+                        <p className="mt-1 text-sm text-neutral-500">{formatMoney(plan.preco_mensal)}/mês</p>
                         <p className="mt-2 text-xs leading-5 text-neutral-600">{plan.limite_usuarios} usuários - {plan.limite_profissionais} profissionais - {plan.limite_clientes} clientes - {plan.limite_agendamentos_mes} agendamentos/mês</p>
                       </div>
                       {plan.slug === currentPlan.slug ? <span className="rounded-full bg-white px-2 py-1 text-xs font-bold text-[var(--clinic-primary)]">Atual</span> : null}

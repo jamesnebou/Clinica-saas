@@ -17,7 +17,7 @@ function requireValue(value, message) {
 }
 
 function redirectSubscriptionError(error, fallback = "upgrade") {
-  const params = new URLSearchParams({ erro: fallback, mensagem: error?.message || "Nao foi possível processar a assinatura agora." });
+  const params = new URLSearchParams({ erro: fallback, mensagem: error?.message || "Não foi possível processar a assinatura agora." });
   redirect(`/dashboard/assinatura?${params.toString()}`);
 }
 
@@ -32,7 +32,7 @@ function ensureCanManageSubscription(memberships, activeClinic) {
   const allowed = ["owner", "admin", "financeiro"];
 
   if (!allowed.includes(membership?.papel)) {
-    throw new Error("Seu usuario nao tem permissao para alterar a assinatura da clinica.");
+    throw new Error("Seu usuário não tem permissão para alterar a assinatura da clínica.");
   }
 }
 
@@ -56,7 +56,7 @@ export async function startSubscriptionAction(formData) {
     redirectSubscriptionError(error, "permissao");
   }
 
-  const planSlug = requireValue(text(formData, "plano"), "Plano nao informado.");
+  const planSlug = requireValue(text(formData, "plano"), "Plano não informado.");
   const billingEmail = text(formData, "billing_email") || activeClinic.billing_email || activeClinic.email;
   const billingType = text(formData, "billing_type") || "UNDEFINED";
   const plans = await getSystemPlans();
@@ -171,7 +171,7 @@ export async function updateBillingEmailAction(formData) {
     redirectSubscriptionError(error, "permissao");
   }
 
-  const billingEmail = requireValue(text(formData, "billing_email"), "Informe o e-mail de cobranca.");
+  const billingEmail = requireValue(text(formData, "billing_email"), "Informe o e-mail de cobrança.");
 
   const { error } = await supabaseAdmin
     .from("clinicas")

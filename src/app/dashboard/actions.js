@@ -702,12 +702,12 @@ export async function createClienteConsentimentoAction(formData) {
 }
 export async function updateAgendamentoFinanceiroAction(formData) {
   const { supabase, clinicaId } = await getScopedSupabase();
-  const agendamentoId = requireValue(text(formData, "agendamento_id"), "Agendamento nao informado.");
+  const agendamentoId = requireValue(text(formData, "agendamento_id"), "Agendamento não informado.");
   const clienteId = nullableText(formData, "cliente_id");
   const profissionalId = nullableText(formData, "profissional_id");
   const valor = numberValue(formData, "valor", 0);
   const valorPagoInformado = numberValue(formData, "valor_pago", 0);
-  const status = requireValue(text(formData, "pagamento_status"), "Status de pagamento nao informado.");
+  const status = requireValue(text(formData, "pagamento_status"), "Status de pagamento não informado.");
   const valorPago = status === "cancelado" ? 0 : valorPagoInformado;
   const formaPagamento = status === "cancelado" ? null : nullableText(formData, "forma_pagamento");
   const dataPagamento = status === "cancelado" ? null : nullableText(formData, "data_pagamento") || (status === "pago" ? new Date().toISOString() : null);
@@ -786,7 +786,7 @@ export async function createPacoteAction(formData) {
 
 export async function sellClientePacoteAction(formData) {
   const { supabase, clinicaId } = await getScopedSupabase();
-  const pacoteId = requireValue(text(formData, "pacote_id"), "Pacote nao informado.");
+  const pacoteId = requireValue(text(formData, "pacote_id"), "Pacote não informado.");
   const clienteId = requireValue(text(formData, "cliente_id"), "Cliente não informado.");
 
   const { data: pacote, error: pacoteError } = await supabase
@@ -797,7 +797,7 @@ export async function sellClientePacoteAction(formData) {
     .maybeSingle();
 
   if (pacoteError) throw pacoteError;
-  if (!pacote) throw new Error("Pacote nao encontrado.");
+  if (!pacote) throw new Error("Pacote não encontrado.");
 
   const compra = nullableText(formData, "data_compra") || new Date().toISOString().slice(0, 10);
   const validade = new Date(`${compra}T12:00:00`);
