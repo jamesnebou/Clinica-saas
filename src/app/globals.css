@@ -309,18 +309,29 @@ textarea {
   opacity: 0.18;
 }
 
-.public-site-shell > * {
+.public-site-shell > :not(.public-site-modal):not(.public-whatsapp-float) {
   position: relative;
   z-index: 1;
 }
 
+.public-site-modal {
+  position: fixed;
+  z-index: 9999;
+}
+
 .public-site-header {
+  position: relative;
   isolation: isolate;
   contain: paint;
   overflow: hidden;
   transform: translate3d(0, 0, 0);
   box-shadow: none;
   backface-visibility: hidden;
+  background:
+    linear-gradient(90deg, rgba(12, 12, 12, 0.8), rgb(10, 10, 10)),
+    color-mix(in srgb, var(--clinic-primary, #047857) 24%, rgb(19, 19, 19, 1));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .public-site-header::before,
@@ -390,7 +401,7 @@ textarea {
   background:
     radial-gradient(circle at 18% 10%, color-mix(in srgb, var(--clinic-accent, #10b981) 18%, transparent), transparent 26rem),
     radial-gradient(circle at 82% 16%, color-mix(in srgb, var(--clinic-primary, #047857) 20%, transparent), transparent 28rem),
-    linear-gradient(135deg, #070605 0%, #14110f 46%, #090807 100%);
+    linear-gradient(135deg, #0e0e0e 0%, #030303 46%, #080808 100%);
 }
 
 .site-video-section::before,
@@ -402,7 +413,7 @@ textarea {
   background-image:
     linear-gradient(115deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 28px),
     linear-gradient(25deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 24px),
-    repeating-radial-gradient(circle at 24% 34%, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 8px);
+    repeating-radial-gradient(circle at 24% 34%, rgba(77, 77, 77, 0.493) 0 1px, transparent 2px 8px);
   opacity: 0.42;
   mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
 }
@@ -414,17 +425,21 @@ textarea {
   inset: auto 10% 0 10%;
   height: 1px;
   content: "";
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--clinic-accent, #10b981) 54%, white), transparent);
-  opacity: 0.55;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--clinic-accent, #10b981) 50%, rgba(255, 255, 255, 1)), transparent);
+  opacity: 0.48;
 }
 
 .site-dark-glass-card {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.12);
   border-radius: 2.25rem;
   background:
+    radial-gradient(circle at 24% 22%, color-mix(in srgb, var(--clinic-accent, #10b981) 10%, transparent), transparent 18rem),
+    radial-gradient(circle at 86% 82%, rgba(255, 255, 255, 0.08), transparent 16rem),
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.01) 0 5px, transparent 1px 16px),
+    repeating-linear-gradient(25deg, rgba(255, 255, 255, 0.01) 0 5px, transparent 5px 24px),
     linear-gradient(135deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.035) 38%, rgba(255, 255, 255, 0.075)),
     rgba(15, 13, 11, 0.82);
   box-shadow:
@@ -435,6 +450,11 @@ textarea {
   backdrop-filter: blur(24px) saturate(1.18);
 }
 
+.site-dark-glass-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 .site-dark-glass-card::before {
   pointer-events: none;
   position: absolute;
@@ -442,10 +462,23 @@ textarea {
   z-index: -1;
   content: "";
   background:
-    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.16), transparent 18rem),
-    radial-gradient(circle at 92% 18%, color-mix(in srgb, var(--clinic-accent, #10b981) 18%, transparent), transparent 18rem),
     linear-gradient(120deg, transparent 0 42%, rgba(255, 255, 255, 0.11) 50%, transparent 58% 100%);
   opacity: 0.72;
+}
+
+.site-dark-glass-card::after {
+  pointer-events: none;
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border-radius: inherit;
+  content: "";
+  background:
+    repeating-linear-gradient(115deg, transparent 0 13px, rgba(255, 255, 255, 0.075) 13px 14px, transparent 14px 28px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 18%, transparent 82%, rgba(255, 255, 255, 0.08)),
+    linear-gradient(135deg, transparent 0 44%, rgba(255, 255, 255, 0.07) 50%, transparent 58% 100%);
+  opacity: 0.72;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
 
 .site-video-frame {
@@ -476,7 +509,7 @@ textarea {
 .public-service-card-dark {
   overflow: hidden;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 1px 0 rgba(15, 15, 15, 0.897),
     0 24px 70px rgba(0, 0, 0, 0.28);
 }
 
@@ -489,7 +522,7 @@ textarea {
   background:
     radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.14), transparent 15rem),
     radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--clinic-accent, #10b981) 16%, transparent), transparent 16rem),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.035));
+    linear-gradient(145deg, rgba(10, 10, 10, 0.986), rgb(24, 24, 24));
 }
 
 .public-service-card::after {
@@ -521,15 +554,41 @@ textarea {
   mask-composite: exclude;
 }
 
+.public-service-reflection {
+  pointer-events: none;
+  position: absolute;
+  inset: -18% auto -18% -38%;
+  z-index: 0;
+  width: 34%;
+  transform: translateX(-130%) rotate(9deg);
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.02) 18%,
+      rgba(255, 255, 255, 0.2) 46%,
+      color-mix(in srgb, var(--clinic-accent, #10b981) 18%, rgba(255, 255, 255, 0.22)) 50%,
+      rgba(255, 255, 255, 0.12) 56%,
+      transparent 100%
+    );
+  filter: blur(10px);
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: public-featured-reflection 4.8s ease-in-out infinite;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 28%, #000 72%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 28%, #000 72%, transparent);
+}
+
 .whatsapp-pulse {
   animation: whatsapp-pulse 1.8s ease-in-out infinite;
 }
 
 .public-whatsapp-float {
-  position: fixed;
+  position: fixed !important;
   right: max(1.25rem, env(safe-area-inset-right));
   bottom: max(1.25rem, env(safe-area-inset-bottom));
-  z-index: 60;
+  z-index: 90;
 }
 
 @media (min-width: 640px) {
@@ -603,10 +662,6 @@ textarea {
     0 0 38px color-mix(in srgb, var(--clinic-primary, #047857) 18%, transparent);
 }
 
-.public-service-card[data-featured="true"]::before {
-  animation: public-featured-reflection 3.8s ease-in-out infinite;
-}
-
 @supports (animation-timeline: view()) {
   .public-reveal {
     animation-name: public-scroll-reveal;
@@ -654,13 +709,27 @@ textarea {
 }
 
 @keyframes public-featured-reflection {
-  0%, 100% {
-    opacity: 0.45;
-    transform: translateX(-10%) rotate(0deg);
+  0% {
+    opacity: 0;
+    transform: translateX(-130%) rotate(20deg);
   }
-  50% {
-    opacity: 0.95;
-    transform: translateX(12%) rotate(0deg);
+  22% {
+    opacity: 0.5;
+  }
+  44% {
+    opacity: 0;
+    transform: translateX(370%) rotate(20deg);
+  }
+  56% {
+    opacity: 0;
+    transform: translateX(350%) rotate(20deg);
+  }
+  78% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-130%) rotate(20deg);
   }
 }
 /* Public site scroll reveal controlled by IntersectionObserver. */

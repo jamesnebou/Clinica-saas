@@ -1,13 +1,13 @@
 ﻿import Link from "next/link";
 
-export const metadata = { title: "Termos de Uso | Clinica SaaS" };
+export const metadata = { title: "Termos de Uso | Clínica SaaS" };
 
 const company = {
-  productName: "Clinica SaaS",
-  legalName: "INSERIR RAZAO SOCIAL DA EMPRESA",
-  document: "INSERIR CNPJ",
-  contactEmail: "contato@seudominio.com.br",
-  whatsapp: "INSERIR WHATSAPP COMERCIAL",
+  productName: "Clínica SaaS - NexaWi",
+  legalName: "NexaWi",
+  document: "54.954.915/0001-65",
+  contactEmail: "contato@nexawi.com.br",
+  whatsapp: "(77) 9 8865-6394",
 };
 
 const sections = [
@@ -27,12 +27,12 @@ export default function TermosPage() {
         <Link href="/" className="text-sm font-semibold text-emerald-700">Voltar</Link>
         <p className="mt-8 text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">Contrato</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">Termos de Uso</h1>
-        <p className="mt-4 text-sm leading-7 text-neutral-600">Este texto e uma versao inicial para demonstracao e deve ser revisado juridicamente antes da comercializacao formal do SaaS.</p>
+        <p className="mt-4 text-sm leading-7 text-neutral-600">Este termo é uma versão inicial, podendo ser alterado a qualquer momento sem aviso prévio.</p>
 
         <section className="mt-8 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm leading-7 text-neutral-700">
-          <h2 className="font-semibold text-neutral-950">Empresa responsavel pelo produto</h2>
+          <h2 className="font-semibold text-neutral-950">Empresa responsável pelo produto</h2>
           <p className="mt-2">Produto: {company.productName}</p>
-          <p>Razao social: {company.legalName}</p>
+          <p>Razão social: {company.legalName}</p>
           <p>CNPJ: {company.document}</p>
           <p>E-mail: {company.contactEmail}</p>
           <p>WhatsApp comercial: {company.whatsapp}</p>
@@ -41,7 +41,7 @@ export default function TermosPage() {
         <div className="mt-8 space-y-6">
           {sections.map(([title, text]) => <section key={title}><h2 className="text-lg font-semibold">{title}</h2><p className="mt-2 text-sm leading-7 text-neutral-600">{text}</p></section>)}
         </div>
-        <p className="mt-8 rounded-lg bg-amber-50 p-4 text-sm leading-7 text-amber-900">Pendente antes da venda: preencher razao social, CNPJ, dominio oficial, e-mail profissional, WhatsApp comercial e revisar juridicamente.</p>
+        <p className="mt-8 rounded-lg bg-amber-50 p-4 text-sm leading-7 text-amber-900">Para mais informações, entre em contato com o suporte.</p>
       </section>
     </main>
   );

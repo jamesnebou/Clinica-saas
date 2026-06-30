@@ -169,6 +169,11 @@ function RichText({ text, className = "" }) {
   );
 }
 
+function isLeadPopupLink(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["popup", "form", "formulario", "formulário", "lead", "modal", "contato", "#popup", "#form", "#formulario", "#formulário", "#lead", "#modal", "#contato"].includes(normalized);
+}
+
 function SectionHeading({ eyebrow, title, description, center = false, tone = "light" }) {
   const dark = tone === "dark";
 
@@ -258,6 +263,11 @@ export default async function PublicClinicPage({ params, searchParams }) {
     : { reviews: [], rating: null, userRatingCount: null, googleMapsUri: null };
   const testimonials = googleReviews.reviews.length ? googleReviews.reviews : manualTestimonials;
   const googleReviewsUrl = site.google_reviews_url || googleReviews.googleMapsUri;
+  const videoCtaUrl = String(site.video_cta_url || "").trim();
+  const campaignCtaUrl = String(site.campanha_cta_url || "").trim();
+  const campaignCtaHref = campaignCtaUrl || "popup";
+  const videoCtaOpensLead = isLeadPopupLink(videoCtaUrl);
+  const campaignCtaOpensLead = isLeadPopupLink(campaignCtaHref);
 
   return (
     <main
@@ -269,7 +279,7 @@ export default async function PublicClinicPage({ params, searchParams }) {
       }}
     >
       <PublicScrollEffects />
-      <header className="public-site-header fixed inset-x-0 top-0 z-[80] border-b border-white/20 bg-[#17130f]/45 px-5 py-4 text-white backdrop-blur-xl sm:px-8">
+      <header className="public-site-header relative z-[80] border-b border-white/20 bg-[#17130f]/70 px-5 py-4 text-white sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-5">
           <a href="#topo" className="flex min-w-0 items-center gap-3">
             {logoUrl ? (
@@ -285,6 +295,7 @@ export default async function PublicClinicPage({ params, searchParams }) {
             <a href="#servicos">Serviços</a>
             <a href="#depoimentos">Depoimentos</a>
             <a href="#localizacao">Localização</a>
+            <a href="popup">Quero saber mais</a>
           </nav>
           <div className="flex items-center gap-2">
             <a href="/login-cliente" className="hidden rounded-full border border-white/20 px-4 py-2 text-xs font-bold text-white/60 transition hover:bg-white/10 hover:text-white sm:inline-flex">Área da clínica</a>
@@ -338,17 +349,16 @@ export default async function PublicClinicPage({ params, searchParams }) {
         </div>
       </section>
 
-      {site.video_ativo ? (
-        <section className="site-video-section px-5 py-24 sm:px-8">
-          <div className="public-card-reveal public-reveal-up site-dark-glass-card mx-auto max-w-7xl p-6 text-white lg:p-10">
-            <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-              <div>
-                <SectionHeading eyebrow="Vídeo" title={site.video_titulo || "Conheça a clínica"} description={site.video_subtitulo || "Veja de perto a estrutura, a abordagem e os cuidados que tornam a experiência mais segura e personalizada."} tone="dark" />
-                <a href={site.video_cta_url || "#agendar"} className="mt-8 inline-flex rounded-full bg-[var(--clinic-accent)] px-6 py-3 text-sm font-black text-[#17130f]">{site.video_cta_label || "Agendar avaliação"}</a>
-              </div>
-              <div className="site-video-frame aspect-video overflow-hidden rounded-[1.5rem]">
-                <PublicMediaFrame url={site.video_url} title={site.video_titulo || brandName} />
-              </div>
+      {site.campanha_ativa ? (
+        <section className="site-campaign-section px-5 py-24 sm:px-8">
+          <div className="public-card-reveal public-reveal-up site-dark-glass-card mx-auto grid max-w-7xl gap-8 p-6 text-white lg:grid-cols-[1.05fr_0.95fr] lg:p-10 lg:items-center">
+            <div>
+              <SectionHeading eyebrow="Campanha" title={site.campanha_titulo || "Protocolo em campanha"} description={site.campanha_subtitulo || "Uma condição especial para iniciar seu cuidado com orientação profissional."} tone="dark" />
+              <RichText text={site.campanha_texto || "Destaque aqui o produto, serviço ou protocolo que a clínica deseja vender mais neste momento."} className="mt-6 text-base leading-8 text-white/70" />
+              <a href={campaignCtaHref} data-lead-popup={campaignCtaOpensLead ? "true" : undefined} className="mt-8 inline-flex rounded-full bg-[var(--clinic-accent)] px-6 py-3 text-sm font-black text-[#17130f]">{site.campanha_cta_label || "Quero saber mais"}</a>
+            </div>
+            <div className="site-video-frame overflow-hidden rounded-[1.75rem]">
+              <PublicMediaFrame url={site.campanha_media_url} title={site.campanha_titulo || "Campanha"} fallbackImageUrl={site.campanha_image_url || heroImage} />
             </div>
           </div>
         </section>
@@ -404,16 +414,17 @@ export default async function PublicClinicPage({ params, searchParams }) {
         </div>
       </section>
 
-      {site.campanha_ativa ? (
-        <section className="site-campaign-section px-5 py-24 sm:px-8">
-          <div className="public-card-reveal public-reveal-up site-dark-glass-card mx-auto grid max-w-7xl gap-8 p-6 text-white lg:grid-cols-[1.05fr_0.95fr] lg:p-10 lg:items-center">
-            <div>
-              <SectionHeading eyebrow="Campanha" title={site.campanha_titulo || "Protocolo em campanha"} description={site.campanha_subtitulo || "Uma condição especial para iniciar seu cuidado com orientação profissional."} tone="dark" />
-              <RichText text={site.campanha_texto || "Destaque aqui o produto, serviço ou protocolo que a clínica deseja vender mais neste momento."} className="mt-6 text-base leading-8 text-white/70" />
-              <a href={site.campanha_cta_url || "#agendar"} className="mt-8 inline-flex rounded-full bg-[var(--clinic-accent)] px-6 py-3 text-sm font-black text-[#17130f]">{site.campanha_cta_label || "Quero saber mais"}</a>
-            </div>
-            <div className="site-video-frame overflow-hidden rounded-[1.75rem]">
-              <PublicMediaFrame url={site.campanha_media_url} title={site.campanha_titulo || "Campanha"} fallbackImageUrl={site.campanha_image_url || heroImage} />
+      {site.video_ativo ? (
+        <section className="site-video-section px-5 py-24 sm:px-8">
+          <div className="public-card-reveal public-reveal-up site-dark-glass-card mx-auto max-w-7xl p-6 text-white lg:p-10">
+            <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+              <div>
+                <SectionHeading eyebrow="Vídeo" title={site.video_titulo || "Conheça a clínica"} description={site.video_subtitulo || "Veja de perto a estrutura, a abordagem e os cuidados que tornam a experiência mais segura e personalizada."} tone="dark" />
+                <a href={videoCtaUrl || "#agendar"} data-lead-popup={videoCtaOpensLead ? "true" : undefined} className="mt-8 inline-flex rounded-full bg-[var(--clinic-accent)] px-6 py-3 text-sm font-black text-[#17130f]">{site.video_cta_label || "Agendar avaliação"}</a>
+              </div>
+              <div className="site-video-frame aspect-video overflow-hidden rounded-[1.5rem]">
+                <PublicMediaFrame url={site.video_url} title={site.video_titulo || brandName} />
+              </div>
             </div>
           </div>
         </section>
@@ -453,7 +464,7 @@ export default async function PublicClinicPage({ params, searchParams }) {
         </div>
       </section>
 
-      <footer className="bg-[#263224] px-5 py-16 text-white sm:px-8">
+      <footer className="bg-[#151515] px-5 py-16 text-white sm:px-8">
         <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.2fr_0.8fr_1fr]">
           <div>
             {logoUrl ? (

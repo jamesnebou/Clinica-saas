@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 function money(value) {
   return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -29,6 +30,7 @@ function fallbackImage(label, dark = false) {
 export function PublicServicesSection({ procedimentos = [] }) {
   const [selected, setSelected] = useState(null);
   const servicesLoop = [...procedimentos, ...procedimentos];
+  const canUsePortal = typeof document !== "undefined";
 
   useEffect(() => {
     if (!selected) return;
@@ -53,12 +55,12 @@ export function PublicServicesSection({ procedimentos = [] }) {
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.32em] text-[var(--clinic-accent)]">Nossos serviços</p>
           <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white sm:text-5xl">Protocolos em destaque</h2>
-          <p className="mt-4 text-base leading-8 text-white/68">Passe pelos tratamentos e escolha o melhor ponto de partida para sua avaliação.</p>
+          <p className="mt-4 text-base leading-8 text-white/68">Clique no procedimento para saber mais.</p>
         </div>
       </div>
 
-      <div className="relative z-10 mt-12 overflow-hidden">
-        <div className="public-services-track flex w-max gap-5 px-5 sm:px-8">
+      <div className="relative z-10 mt-6 overflow-x-hidden py-23">
+        <div className="public-services-track flex w-max gap-5 px-16 sm:px-24">
           {servicesLoop.map((item, index) => (
             <button
               key={`${item.id}-${index}`}
@@ -67,6 +69,7 @@ export function PublicServicesSection({ procedimentos = [] }) {
               onClick={() => setSelected(item)}
               className="public-card-reveal public-reveal-up public-service-card public-service-card-dark w-[330px] shrink-0 rounded-[1.75rem] border border-white/10 bg-white/[0.075] p-6 text-left text-white backdrop-blur-2xl md:w-[390px]"
             >
+              {item.destaque_site ? <span className="public-service-reflection" aria-hidden="true" /> : null}
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--clinic-accent)]">{item.categoria || "Procedimento"}</p>
@@ -88,10 +91,10 @@ export function PublicServicesSection({ procedimentos = [] }) {
         </div>
       </div>
 
-      {selected ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-5 py-10 backdrop-blur-sm" role="dialog" aria-modal="true">
+      {selected && canUsePortal ? createPortal(
+        <div className="public-site-modal fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-5 py-10 backdrop-blur-sm" role="dialog" aria-modal="true" onMouseDown={() => setSelected(null)}>
           <button type="button" className="absolute inset-0 cursor-default" aria-label="Fechar detalhes" onClick={() => setSelected(null)} />
-          <div className="relative max-h-[90vh] w-full max-w-5xl overflow-auto rounded-[2rem] border border-white/12 bg-[#15120f] p-6 text-white shadow-[0_34px_100px_rgba(0,0,0,0.45)]">
+          <div className="relative max-h-[90vh] w-full max-w-5xl overflow-auto rounded-[2rem] border border-white/12 bg-[#15120f] p-6 text-white shadow-[0_34px_100px_rgba(0,0,0,0.45)]" onMouseDown={(event) => event.stopPropagation()}>
             <button
               type="button"
               onClick={() => setSelected(null)}
@@ -127,7 +130,8 @@ export function PublicServicesSection({ procedimentos = [] }) {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       ) : null}
     </section>
   );

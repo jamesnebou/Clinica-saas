@@ -10,21 +10,30 @@ export function PublicLeadForm({ slug, query }) {
   useEffect(() => {
     function isLeadReference(value) {
       const normalized = String(value || "").trim().toLowerCase();
-      return ["popup", "form", "formulario", "formulário", "lead", "#popup", "#form", "#formulario", "#formulário", "#lead"].includes(normalized);
+      return ["popup", "form", "formulario", "formulário", "lead", "modal", "contato", "#popup", "#form", "#formulario", "#formulário", "#lead", "#modal", "#contato"].includes(normalized);
+    }
+
+    function openFromLocation() {
+      if (isLeadReference(window.location.hash)) setOpen(true);
     }
 
     function handleClick(event) {
       const link = event.target.closest?.("a");
       if (!link) return;
 
-      if (!isLeadReference(link.getAttribute("href"))) return;
+      if (!link.dataset.leadPopup && !isLeadReference(link.getAttribute("href"))) return;
 
       event.preventDefault();
       setOpen(true);
     }
 
+    openFromLocation();
     document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    window.addEventListener("hashchange", openFromLocation);
+    return () => {
+      document.removeEventListener("click", handleClick);
+      window.removeEventListener("hashchange", openFromLocation);
+    };
   }, [query?.lead, query?.lead_erro]);
 
   useEffect(() => {
@@ -38,13 +47,15 @@ export function PublicLeadForm({ slug, query }) {
 
   function close() {
     setOpen(false);
-    if (query?.lead || query?.lead_erro) history.replaceState(null, "", window.location.pathname);
+    if (query?.lead || query?.lead_erro || ["#popup", "#form", "#lead", "#modal", "#contato"].includes(window.location.hash.toLowerCase())) {
+      history.replaceState(null, "", window.location.pathname);
+    }
   }
 
   return (
     <>
       {open ? (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-[#0f0b08]/75 px-5 py-8 backdrop-blur-md" role="dialog" aria-modal="true">
+        <div className="public-site-modal fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-[#0f0b08]/75 px-5 py-8 backdrop-blur-md" role="dialog" aria-modal="true">
           <button type="button" className="absolute inset-0 cursor-default" aria-label="Fechar formulário" onClick={close} />
           <div className="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/12 bg-[#15120f] p-6 text-white shadow-[0_34px_120px_rgba(0,0,0,0.55)] sm:p-8">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_16%_0%,color-mix(in_srgb,var(--clinic-accent)_28%,transparent),transparent_18rem),radial-gradient(circle_at_100%_18%,color-mix(in_srgb,var(--clinic-primary)_26%,transparent),transparent_20rem)]" />
