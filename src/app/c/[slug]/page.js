@@ -310,7 +310,7 @@ export default async function PublicClinicPage({ params, searchParams }) {
           </nav>
           <div className="flex items-center gap-2">
             <a href="/login-cliente" className="hidden rounded-full border border-white/20 px-4 py-2 text-xs font-bold text-white/60 transition hover:bg-white/10 hover:text-white sm:inline-flex">Área da clínica</a>
-            <a href="#agendar" className="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[#17130f]">Agendar</a>
+            <a href="#agendar" className="hidden rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[#17130f] lg:inline-flex">Agendar</a>
           </div>
         </div>
       </header>
