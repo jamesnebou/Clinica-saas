@@ -322,8 +322,7 @@ textarea {
 .public-site-header {
   position: relative;
   isolation: isolate;
-  contain: paint;
-  overflow: hidden;
+  overflow: visible;
   transform: translate3d(0, 0, 0);
   box-shadow: none;
   backface-visibility: hidden;
