@@ -14,6 +14,7 @@ import {
   HeartPulse,
   MessageCircle,
   ShieldCheck,
+  Sparkles,
   UsersRound,
   WalletCards,
 } from "lucide-react";
@@ -60,44 +61,105 @@ const workflow = [
 ];
 
 const outcomes = [
-  "Menos planilhas e menos retrabalho na recepção",
-  "Mais controle sobre agenda, faltas e retornos",
-  "Venda de pacotes e sinal online no mesmo fluxo",
-  "Prontuário organizado para aumentar valor percebido",
+  "Menos planilhas para recepção",
+  "Mais controle sobre retornos",
+  "Sinal online no mesmo fluxo",
+  "Prontuário pronto para evolução",
 ];
 
 const plans = [
   {
     name: "Starter",
     price: "R$ 97",
+    badge: "Entrada",
     description: "Para clínicas em validação comercial.",
     limits: "3 profissionais, 300 clientes e 500 agendamentos por mês.",
+    differentiator: "Ideal para sair da agenda manual e começar com site, CRM e financeiro.",
   },
   {
     name: "Growth",
     price: "R$ 197",
+    badge: "Mais vendido",
     description: "Para clínicas com equipe e rotina ativa.",
     limits: "10 profissionais, 2.000 clientes e 3.000 agendamentos por mês.",
+    differentiator: "Melhor equilíbrio para clínica que já vende, agenda e precisa controlar equipe.",
     highlight: true,
   },
   {
     name: "Premium",
     price: "R$ 397",
+    badge: "Escala",
     description: "Para operações maiores e redes locais.",
     limits: "50 profissionais, 10.000 clientes e alto volume comercial.",
+    differentiator: "Para clínicas com múltiplas agendas, alto volume e operação comercial madura.",
+  },
+];
+
+const comparisonRows = [
+  ["Usuários", "3", "8", "25"],
+  ["Profissionais", "3", "10", "50"],
+  ["Clientes cadastrados", "300", "2.000", "10.000"],
+  ["Agendamentos por mês", "500", "3.000", "15.000"],
+  ["Site premium da clínica", "Incluso", "Incluso", "Incluso"],
+  ["CRM de leads e oportunidades", "Incluso", "Incluso", "Incluso"],
+  ["Prontuário, termos e fotos", "Incluso", "Incluso", "Incluso"],
+  ["Financeiro e pacotes", "Básico", "Completo", "Avançado"],
+  ["Comissões por profissional", "Incluso", "Incluso", "Incluso"],
+  ["Domínio próprio do site", "Incluso", "Incluso", "Incluso"],
+  ["Checkout de sinal", "Incluso", "Incluso", "Incluso"],
+  ["Indicado para", "Começar", "Crescer", "Escalar"],
+];
+
+const faqs = [
+  {
+    question: "A NexaWi Clínicas substitui agenda, planilha e CRM separados?",
+    answer:
+      "Sim. A proposta é centralizar agenda, clientes, prontuário, financeiro, CRM, site público e checkout em um único fluxo operacional.",
+  },
+  {
+    question: "Cada clínica pode ter o próprio site?",
+    answer:
+      "Sim. Cada clínica tem uma página pública editável, com identidade visual, procedimentos, depoimentos, localização, formulário e agendamento conectado à agenda real.",
+  },
+  {
+    question: "O pagamento do sinal cai direto para a clínica?",
+    answer:
+      "Sim, quando a clínica configura sua própria integração Asaas. Assim cada cliente usa suas credenciais e recebe os pagamentos na própria conta.",
+  },
+  {
+    question: "A clínica pode usar domínio próprio?",
+    answer:
+      "Sim. O domínio pode apontar para a Vercel e a plataforma direciona o visitante para o site correto da clínica.",
+  },
+  {
+    question: "O sistema tem demonstração antes da contratação?",
+    answer:
+      "Sim. A demo livre usa o painel real com dados fictícios restaurados automaticamente para novos testes.",
+  },
+  {
+    question: "Qual plano faz mais sentido para começar?",
+    answer:
+      "Para uma clínica pequena, o Starter resolve o início. Para uma operação que já possui equipe, rotina ativa e volume comercial, o Growth costuma ser o melhor ponto de partida.",
   },
 ];
 
 function LogoMark() {
   return (
-    <Image src="/nexawi-clinicas.png" alt="NexaWi Clínicas" width={180} height={48} priority className="h-10 w-auto object-contain" />
+    <Image
+      src="/nexawi-clinicas.png"
+      alt="NexaWi Clínicas"
+      width={180}
+      height={48}
+      priority
+      className="h-10 w-auto object-contain"
+    />
   );
 }
 
 function SectionTitle({ eyebrow, title, description, align = "left" }) {
   return (
     <div className={align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
-      <p className="text-xs font-black uppercase text-[#ed7009]">{eyebrow}</p>
+      <p className="text-xs font-black uppercase tracking-[0.32em] text-[#ed7009]">{eyebrow}</p>
       <h2 className="mt-3 text-3xl font-black leading-tight text-[#081512] sm:text-5xl">{title}</h2>
       {description ? <p className="mt-4 text-base leading-8 text-neutral-600">{description}</p> : null}
     </div>
@@ -121,6 +183,8 @@ export default function Home() {
             <a href="#produto">Produto</a>
             <a href="#site">Site da clínica</a>
             <a href="#planos">Planos</a>
+            <a href="#comparativo">Comparativo</a>
+            <a href="#faq">FAQ</a>
             <a href="#demo">Demonstração</a>
           </nav>
           <div className="flex items-center gap-2">
@@ -226,7 +290,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(237,112,9,0.22),transparent_26rem),radial-gradient(circle_at_82%_18%,rgba(244,114,182,0.11),transparent_22rem)]" />
         <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div>
-            <p className="text-xs font-black uppercase text-orange-300">Fluxo comercial</p>
+            <p className="text-xs font-black uppercase tracking-[0.32em] text-orange-300">Fluxo comercial</p>
             <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">Da primeira visita no site ao retorno recomendado.</h2>
             <p className="mt-5 text-base leading-8 text-white/68">
               O objetivo não é só cadastrar dados. É transformar interesse em agendamento, agendamento em pagamento, atendimento em histórico e histórico em retorno.
@@ -276,17 +340,13 @@ export default function Home() {
               height={900}
               className="pointer-events-none relative z-20 h-auto w-full drop-shadow-[0_34px_70px_rgba(20,18,15,0.22)]"
             />
-            <div className="absolute left-[13%] top-[20%] z-10 h-[50%] w-[74%] overflow-hidden rounded-[0.65rem] bg-[#ffffff]">
+            <div className="absolute left-[13%] top-[20%] z-10 h-[50%] w-[74%] overflow-hidden rounded-[0.65rem] bg-white">
               <div className="h-full w-full overflow-auto">
                 <iframe
                   src="/c/studio-ingrid-silva"
                   title="Site público demonstrativo da clínica"
                   className="origin-top-left border-0"
-                  style={{
-                    width: "1280px",
-                    height: "920px",
-                    transform: "scale(0.33)",
-                  }}
+                  style={{ width: "1280px", height: "920px", transform: "scale(0.33)" }}
                   loading="lazy"
                 />
               </div>
@@ -317,18 +377,89 @@ export default function Home() {
       </section>
 
       <section id="planos" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10">
-        <SectionTitle eyebrow="Planos" title="Planos simples para começar, vender e escalar." description="A clínica entra com uma estrutura pronta e você controla limites, trial, inadimplência e cobrança." align="center" />
+        <SectionTitle
+          eyebrow="Planos"
+          title="Planos simples para começar, vender e escalar."
+          description="A clínica entra com uma estrutura pronta e você controla limites, trial, inadimplência e cobrança."
+          align="center"
+        />
         <div className="mt-12 grid gap-5 lg:grid-cols-3">
           {plans.map((plan) => (
-            <article key={plan.name} className={`rounded-[1.75rem] border p-6 shadow-sm ${plan.highlight ? "border-[#ed7009]/60 bg-[#071e1a] text-white shadow-[0_30px_90px_rgba(237,112,9,0.20)]" : "border-neutral-200 bg-white"}`}>
+            <article
+              key={plan.name}
+              className={`rounded-[1.75rem] border p-6 shadow-sm ${plan.highlight ? "border-[#ed7009]/60 bg-[#071e1a] text-white shadow-[0_30px_90px_rgba(237,112,9,0.20)]" : "border-neutral-200 bg-white"}`}
+            >
               <div className="flex items-center justify-between gap-4">
                 <h3 className="text-2xl font-black">{plan.name}</h3>
-                {plan.highlight ? <span className="rounded-full bg-[#ed7009] px-3 py-1 text-xs font-black text-white">Mais vendido</span> : null}
+                <span className={`rounded-full px-3 py-1 text-xs font-black ${plan.highlight ? "bg-[#ed7009] text-white" : "bg-orange-50 text-[#ed7009]"}`}>
+                  {plan.badge}
+                </span>
               </div>
               <p className={`mt-3 text-sm leading-7 ${plan.highlight ? "text-white/68" : "text-neutral-600"}`}>{plan.description}</p>
-              <p className="mt-7 text-4xl font-black">{plan.price}<span className={`text-sm font-bold ${plan.highlight ? "text-white/58" : "text-neutral-500"}`}>/mês</span></p>
+              <p className="mt-7 text-4xl font-black">
+                {plan.price}
+                <span className={`text-sm font-bold ${plan.highlight ? "text-white/58" : "text-neutral-500"}`}>/mês</span>
+              </p>
               <p className={`mt-5 rounded-2xl p-4 text-sm leading-6 ${plan.highlight ? "bg-white/8 text-white/74" : "bg-neutral-50 text-neutral-600"}`}>{plan.limits}</p>
+              <div className={`mt-4 rounded-2xl border p-4 text-sm leading-6 ${plan.highlight ? "border-white/10 bg-white/[0.04] text-white/80" : "border-orange-100 bg-orange-50/60 text-neutral-700"}`}>
+                <Sparkles size={17} className="mb-2 text-[#ed7009]" />
+                {plan.differentiator}
+              </div>
             </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="comparativo" className="bg-white py-20">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <SectionTitle
+            eyebrow="Comparativo"
+            title="Escolha pelo momento da clínica, não por tentativa e erro."
+            description="O comparativo deixa claro o que muda de um plano para outro e ajuda a vender o upgrade com mais facilidade."
+            align="center"
+          />
+          <div className="mt-12 overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white shadow-[0_24px_80px_rgba(20,18,15,0.08)]">
+            <div className="grid grid-cols-[1.35fr_repeat(3,1fr)] bg-[#071e1a] text-sm font-black text-white">
+              <div className="p-4">Recurso</div>
+              {plans.map((plan) => (
+                <div key={plan.name} className={`p-4 ${plan.highlight ? "bg-[#ed7009]" : ""}`}>
+                  {plan.name}
+                </div>
+              ))}
+            </div>
+            {comparisonRows.map(([feature, starter, growth, premium], index) => (
+              <div key={feature} className={`grid grid-cols-[1.35fr_repeat(3,1fr)] border-t border-neutral-100 text-sm ${index % 2 === 0 ? "bg-[#fbfaf7]" : "bg-white"}`}>
+                <div className="p-4 font-bold text-neutral-800">{feature}</div>
+                <div className="p-4 text-neutral-600">{starter}</div>
+                <div className="p-4 font-bold text-[#ed7009]">{growth}</div>
+                <div className="p-4 text-neutral-600">{premium}</div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-center text-sm leading-7 text-neutral-500">
+            Os limites podem ser ajustados comercialmente para redes, franquias ou operações com necessidade específica.
+          </p>
+        </div>
+      </section>
+
+      <section id="faq" className="mx-auto max-w-5xl px-5 py-20 sm:px-8 lg:px-10">
+        <SectionTitle
+          eyebrow="FAQ"
+          title="Perguntas que aparecem antes da contratação."
+          description="Respostas diretas para reduzir objeções e deixar claro que o produto foi pensado como SaaS comercial para várias clínicas."
+          align="center"
+        />
+        <div className="mt-10 grid gap-4">
+          {faqs.map((item) => (
+            <details key={item.question} className="group rounded-[1.35rem] border border-neutral-200 bg-white p-5 shadow-sm open:shadow-[0_24px_70px_rgba(7,30,26,0.10)]">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-black text-neutral-950">
+                {item.question}
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-50 text-[#ed7009] transition group-open:rotate-90">
+                  <ChevronRight size={17} />
+                </span>
+              </summary>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-neutral-600">{item.answer}</p>
+            </details>
           ))}
         </div>
       </section>
@@ -336,7 +467,7 @@ export default function Home() {
       <section id="demo" className="px-5 pb-20 sm:px-8 lg:px-10">
         <div className="mx-auto grid max-w-7xl gap-8 rounded-[2rem] bg-[#071e1a] p-7 text-white shadow-[0_34px_100px_rgba(7,30,26,0.24)] lg:grid-cols-[1fr_0.85fr] lg:p-10">
           <div>
-            <p className="text-xs font-black uppercase text-orange-300">Demonstração</p>
+            <p className="text-xs font-black uppercase tracking-[0.32em] text-orange-300">Demonstração</p>
             <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">Pronto para vender para clínicas com uma apresentação profissional.</h2>
             <p className="mt-5 max-w-2xl text-base leading-8 text-white/68">
               Use a demo para mostrar agenda, cliente, prontuário, CRM, financeiro, assinatura e site público da clínica em um roteiro comercial claro.
@@ -367,9 +498,7 @@ export default function Home() {
 
       <footer className="border-t border-black/10 bg-white px-5 py-8 text-sm text-neutral-500 sm:px-8 lg:px-10">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <LogoMark />
-          </div>
+          <LogoMark />
           <div className="flex flex-wrap gap-4">
             <Link href="/privacidade">Privacidade</Link>
             <Link href="/termos">Termos</Link>

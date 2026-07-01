@@ -16,8 +16,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Poppins", ui-sans-serif, system-ui, sans-serif;
 }
 
 * {
@@ -38,7 +38,7 @@ body {
     radial-gradient(circle at 78% 6%, rgba(20, 20, 18, 0.045), transparent 24rem),
     linear-gradient(135deg, #f8f7f2 0%, #f2f0e9 44%, #ecefeb 100%);
   color: var(--foreground);
-  font-family: "Geist", "Geist Fallback", Arial, Helvetica, sans-serif;
+  font-family: var(--font-poppins), "Poppins", Arial, Helvetica, sans-serif;
   text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
 }
