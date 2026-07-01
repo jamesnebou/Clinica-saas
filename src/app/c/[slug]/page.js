@@ -1,10 +1,11 @@
 ﻿import { Fragment } from "react";
-import { CheckCircle2, Clock, CreditCard, MapPin, Menu, MessageCircle, Quote, ShieldCheck, Sparkles, Star } from "lucide-react";
+import { CheckCircle2, Clock, CreditCard, MapPin, MessageCircle, Quote, ShieldCheck, Sparkles, Star } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getGooglePlaceReviews } from "@/lib/google/places";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { PublicBookingForm } from "./booking-form";
 import { PublicLeadForm } from "./lead-form";
+import { PublicMobileMenu } from "./mobile-menu";
 import { PublicScrollEffects } from "./scroll-effects";
 import { PublicServicesSection } from "./services-section";
 
@@ -309,20 +310,6 @@ export default async function PublicClinicPage({ params, searchParams }) {
           </nav>
           <div className="flex items-center gap-2">
             <a href="/login-cliente" className="hidden rounded-full border border-white/20 px-4 py-2 text-xs font-bold text-white/60 transition hover:bg-white/10 hover:text-white sm:inline-flex">Área da clínica</a>
-            <details className="public-mobile-menu group lg:hidden">
-              <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border border-white/16 bg-white/8 text-white transition hover:bg-white/12 [&::-webkit-details-marker]:hidden">
-                <Menu size={19} />
-                <span className="sr-only">Abrir menu</span>
-              </summary>
-              <div className="public-mobile-menu-panel overflow-hidden rounded-2xl border border-white/12 bg-[#17130f]/98 p-2 text-sm font-bold text-white shadow-[0_24px_70px_rgba(0,0,0,0.44)]">
-                <a href="#sobre" className="block rounded-xl px-4 py-3 hover:bg-white/8">Sobre</a>
-                <a href="#servicos" className="block rounded-xl px-4 py-3 hover:bg-white/8">Serviços</a>
-                <a href="#depoimentos" className="block rounded-xl px-4 py-3 hover:bg-white/8">Depoimentos</a>
-                <a href="#localizacao" className="block rounded-xl px-4 py-3 hover:bg-white/8">Localização</a>
-                <a href="popup" className="block rounded-xl px-4 py-3 hover:bg-white/8">Quero saber mais</a>
-                <a href="/login-cliente" className="mt-1 block rounded-xl border border-white/12 bg-white/8 px-4 py-3 text-white/85">Área da clínica</a>
-              </div>
-            </details>
             <a href="#agendar" className="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[#17130f]">Agendar</a>
           </div>
         </div>
@@ -537,6 +524,7 @@ export default async function PublicClinicPage({ params, searchParams }) {
       ) : null}
 
       <PublicLeadForm slug={clinic.slug} query={query} />
+      <PublicMobileMenu />
     </main>
   );
 }

@@ -309,7 +309,7 @@ textarea {
   opacity: 0.18;
 }
 
-.public-site-shell > :not(.public-site-modal):not(.public-whatsapp-float) {
+.public-site-shell > :not(.public-site-modal):not(.public-whatsapp-float):not(.public-floating-menu) {
   position: relative;
   z-index: 1;
 }
@@ -340,41 +340,77 @@ textarea {
   content: none;
 }
 
-.public-mobile-menu {
+.public-floating-menu {
   position: fixed;
-  top: max(0.85rem, env(safe-area-inset-top));
-  right: 7.6rem;
-  z-index: 10000;
+  top: max(5.6rem, calc(env(safe-area-inset-top) + 5.1rem));
+  right: 1rem;
+  z-index: 2147483000;
+  pointer-events: auto;
 }
 
-.public-mobile-menu > summary {
-  background: rgba(23, 19, 15, 0.78);
+.public-floating-menu-button {
+  display: flex;
+  width: 3.75rem;
+  height: 3.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 30% 0%, color-mix(in srgb, var(--clinic-accent, #10b981) 18%, transparent), transparent 70%),
+    rgba(16, 13, 11, 0.9);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 14px 34px rgba(0, 0, 0, 0.28);
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 18px 44px rgba(0, 0, 0, 0.34);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
 
-.public-mobile-menu[open] > summary {
-  background: rgba(23, 19, 15, 0.94);
+.public-floating-menu-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 2147482998;
+  background: rgba(8, 6, 5, 0.48);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
-.public-mobile-menu-panel {
+.public-floating-menu-panel {
   position: fixed;
-  top: calc(max(0.85rem, env(safe-area-inset-top)) + 4.15rem);
+  top: max(10rem, calc(env(safe-area-inset-top) + 9.5rem));
   left: 1rem;
   right: 1rem;
-  z-index: 10001;
+  z-index: 2147482999;
+  display: grid;
+  gap: 0.35rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 1.35rem;
+  padding: 0.5rem;
   background:
     radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--clinic-accent, #10b981) 18%, transparent), transparent 14rem),
     linear-gradient(135deg, rgba(23, 19, 15, 0.98), rgba(10, 8, 7, 0.98));
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 28px 84px rgba(0, 0, 0, 0.46);
+}
+
+.public-floating-menu-panel a {
+  display: block;
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.public-floating-menu-panel a:hover,
+.public-floating-menu-panel a:focus {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
 
 @media (min-width: 1024px) {
-  .public-mobile-menu {
+  .public-floating-menu {
     display: none;
   }
 }
